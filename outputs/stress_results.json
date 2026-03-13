@@ -1,0 +1,142 @@
+{
+  "generated_at": "2026-03-13T17:24:53.660285",
+  "portfolio_values": {
+    "VFV.TO": 10127.0,
+    "XEQT.TO": 9875.0,
+    "TEC.TO": 6267.0
+  },
+  "stress_results": {
+    "A_oil_crisis": {
+      "name": "石油危机",
+      "description": "油价飙升、通胀重燃、利率上行（类2022）",
+      "results": {
+        "VFV.TO": {
+          "current_value": 10127.0,
+          "shock_pess_pct": -25,
+          "shock_base_pct": -18,
+          "shock_opti_pct": -12,
+          "loss_pess": -2532.0,
+          "loss_base": -1823.0,
+          "loss_opti": -1215.0
+        },
+        "XEQT.TO": {
+          "current_value": 9875.0,
+          "shock_pess_pct": -20,
+          "shock_base_pct": -14,
+          "shock_opti_pct": -9,
+          "loss_pess": -1975.0,
+          "loss_base": -1382.0,
+          "loss_opti": -889.0
+        },
+        "TEC.TO": {
+          "current_value": 6267.0,
+          "shock_pess_pct": -38,
+          "shock_base_pct": -28,
+          "shock_opti_pct": -18,
+          "loss_pess": -2381.0,
+          "loss_base": -1755.0,
+          "loss_opti": -1128.0
+        }
+      },
+      "totals": {
+        "pessimistic": -6888.0,
+        "base": -4960.0,
+        "optimistic": -3232.0
+      },
+      "total_pct": {
+        "pessimistic": -26.2,
+        "base": -18.9,
+        "optimistic": -12.3
+      },
+      "total_value": 26269.0
+    },
+    "B_ai_regulation": {
+      "name": "AI监管冲击",
+      "description": "大型科技反垄断/监管打压（类EU AI Act极端版）",
+      "results": {
+        "VFV.TO": {
+          "current_value": 10127.0,
+          "shock_pess_pct": -18,
+          "shock_base_pct": -12,
+          "shock_opti_pct": -7,
+          "loss_pess": -1823.0,
+          "loss_base": -1215.0,
+          "loss_opti": -709.0
+        },
+        "XEQT.TO": {
+          "current_value": 9875.0,
+          "shock_pess_pct": -15,
+          "shock_base_pct": -10,
+          "shock_opti_pct": -6,
+          "loss_pess": -1481.0,
+          "loss_base": -988.0,
+          "loss_opti": -592.0
+        },
+        "TEC.TO": {
+          "current_value": 6267.0,
+          "shock_pess_pct": -50,
+          "shock_base_pct": -35,
+          "shock_opti_pct": -22,
+          "loss_pess": -3134.0,
+          "loss_base": -2193.0,
+          "loss_opti": -1379.0
+        }
+      },
+      "totals": {
+        "pessimistic": -6438.0,
+        "base": -4396.0,
+        "optimistic": -2680.0
+      },
+      "total_pct": {
+        "pessimistic": -24.5,
+        "base": -16.7,
+        "optimistic": -10.2
+      },
+      "total_value": 26269.0
+    },
+    "C_rate_normalization": {
+      "name": "利率正常化",
+      "description": "美联储重新加息，高估值股票承压",
+      "results": {
+        "VFV.TO": {
+          "current_value": 10127.0,
+          "shock_pess_pct": -22,
+          "shock_base_pct": -16,
+          "shock_opti_pct": -10,
+          "loss_pess": -2228.0,
+          "loss_base": -1620.0,
+          "loss_opti": -1013.0
+        },
+        "XEQT.TO": {
+          "current_value": 9875.0,
+          "shock_pess_pct": -18,
+          "shock_base_pct": -13,
+          "shock_opti_pct": -8,
+          "loss_pess": -1778.0,
+          "loss_base": -1284.0,
+          "loss_opti": -790.0
+        },
+        "TEC.TO": {
+          "current_value": 6267.0,
+          "shock_pess_pct": -42,
+          "shock_base_pct": -30,
+          "shock_opti_pct": -20,
+          "loss_pess": -2632.0,
+          "loss_base": -1880.0,
+          "loss_opti": -1253.0
+        }
+      },
+      "totals": {
+        "pessimistic": -6638.0,
+        "base": -4784.0,
+        "optimistic": -3056.0
+      },
+      "total_pct": {
+        "pessimistic": -25.3,
+        "base": -18.2,
+        "optimistic": -11.6
+      },
+      "total_value": 26269.0
+    }
+  }
+}

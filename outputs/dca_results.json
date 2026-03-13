@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-03-13T17:24:53.196930",
+  "dca_config": {
+    "start_date": "2022-01-01",
+    "frequency": "biweekly",
+    "amounts_cad": {
+      "VFV.TO": 65,
+      "XEQT.TO": 65,
+      "TEC.TO": 35
+    }
+  },
+  "dca_results": {
+    "VFV.TO": {
+      "invested": 6825,
+      "current_value": 10127.33,
+      "return_pct": 48.4,
+      "n_periods": 105,
+      "total_units": 60.4508,
+      "amount_per_period": 65
+    },
+    "XEQT.TO": {
+      "invested": 6825,
+      "current_value": 9874.94,
+      "return_pct": 44.7,
+      "n_periods": 105,
+      "total_units": 246.5653,
+      "amount_per_period": 65
+    },
+    "TEC.TO": {
+      "invested": 3675,
+      "current_value": 6266.91,
+      "return_pct": 70.5,
+      "n_periods": 105,
+      "total_units": 117.5802,
+      "amount_per_period": 35
+    }
+  },
+  "correlation_warnings": [
+    {
+      "pair": [
+        "VFV.TO",
+        "XEQT.TO"
+      ],
+      "corr": 0.924,
+      "level": "高 / High",
+      "note": "分散化效果有限"
+    },
+    {
+      "pair": [
+        "VFV.TO",
+        "TEC.TO"
+      ],
+      "corr": 0.924,
+      "level": "高 / High",
+      "note": "分散化效果有限"
+    }
+  ],
+  "summary": {
+    "total_invested": 17325,
+    "total_value": 26269.18,
+    "total_return_pct": 51.6
+  }
+}

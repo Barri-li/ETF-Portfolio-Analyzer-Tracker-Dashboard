@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-03-13T17:24:52.753574",
+  "date_range": {
+    "start": "2021-01-01",
+    "end": "2025-12-31"
+  },
+  "tickers": {
+    "VFV.TO": "Vanguard S&P 500 (CAD)",
+    "XEQT.TO": "iShares 全球股票",
+    "TEC.TO": "TD 科技 ETF"
+  },
+  "metrics": {
+    "VFV.TO": {
+      "total_return": 111.8,
+      "annual_return": 16.3,
+      "volatility": 14.9,
+      "max_drawdown": -22.2,
+      "sharpe": 0.82
+    },
+    "XEQT.TO": {
+      "total_return": 85.5,
+      "annual_return": 13.2,
+      "volatility": 12.9,
+      "max_drawdown": -19.5,
+      "sharpe": 0.72
+    },
+    "TEC.TO": {
+      "total_return": 122.5,
+      "annual_return": 17.5,
+      "volatility": 22.4,
+      "max_drawdown": -35.3,
+      "sharpe": 0.65
+    }
+  }
+}

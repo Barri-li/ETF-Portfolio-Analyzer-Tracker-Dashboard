@@ -1,0 +1,85 @@
+# ================================================================
+# ETF Portfolio Analyzer — 配置文件
+# 所有参数都在这里修改，不需要改任何 Python 代码
+# ================================================================
+
+
+# ── 你的 ETF 持仓 ─────────────────────────────────────────────
+# 格式：Ticker: "显示名称"
+# 支持任何 yfinance 支持的代码（TSX用.TO，NYSE直接写代码）
+# 例如：AAPL, QQQ, VTI, XIU.TO, 2800.HK 都可以
+
+portfolio:
+  tickers:
+    VFV.TO:  "Vanguard S&P 500 (CAD)"
+    XEQT.TO: "iShares 全球股票"
+    TEC.TO:  "TD 科技 ETF"
+    # 加新ETF只需加一行，例如：
+    # QQC-F.TO: "Invesco Nasdaq-100 (Unhedged)"
+    # CGL.C:    "iShares Gold Bullion"
+
+  # 你每笔的市值（用于压力测试计算损失金额）
+  # 如果不确定，先填估算值，或者全填 1000 做比例分析
+  current_values_cad:
+    VFV.TO:  9621
+    XEQT.TO: 12014
+    TEC.TO:  5454
+
+
+# ── 数据时间范围 ──────────────────────────────────────────────
+dates:
+  start: "2021-01-01"
+  end:   "2025-12-31"   # 改成 "today" 会自动取今天
+  risk_free_rate: 0.04  # 年化无风险利率（当前约4%）
+
+
+# ── 定投（DCA）参数 ───────────────────────────────────────────
+dca:
+  start_date: "2022-01-01"   # 定投开始日期
+  frequency: "biweekly"      # 选项：monthly / biweekly / weekly
+
+  # 每期定投金额（加元）
+  # biweekly = 每两周投一次，monthly = 每月一次
+  amounts_cad:
+    VFV.TO:  65
+    XEQT.TO: 65
+    TEC.TO:  35
+
+
+# ── 压力测试情景 ──────────────────────────────────────────────
+# 每个情景包含三列冲击（悲观/基准/乐观），单位：%跌幅（负数）
+# 可以自由增减情景，也可以修改冲击幅度
+
+stress_scenarios:
+  A_oil_crisis:
+    name: "石油危机"
+    description: "油价飙升、通胀重燃、利率上行（类2022）"
+    shocks:  # ticker: [pessimistic, base, optimistic]
+      VFV.TO:  [-25, -18, -12]
+      XEQT.TO: [-20, -14, -9]
+      TEC.TO:  [-38, -28, -18]
+
+  B_ai_regulation:
+    name: "AI监管冲击"
+    description: "大型科技反垄断/监管打压（类EU AI Act极端版）"
+    shocks:
+      VFV.TO:  [-18, -12, -7]
+      XEQT.TO: [-15, -10, -6]
+      TEC.TO:  [-50, -35, -22]
+
+  C_rate_normalization:
+    name: "利率正常化"
+    description: "美联储重新加息，高估值股票承压"
+    shocks:
+      VFV.TO:  [-22, -16, -10]
+      XEQT.TO: [-18, -13, -8]
+      TEC.TO:  [-42, -30, -20]
+
+
+# ── 输出设置 ──────────────────────────────────────────────────
+output:
+  directory: "outputs"          # 所有生成文件存放的文件夹
+  language: "both"              # zh = 中文 | en = English | both = 中英双语
+  generate_pdf: true            # 是否生成PDF报告
+  generate_json: true           # 是否生成JSON（用于HTML dashboard）
+  chart_style: "dark"           # dark / light（图表主题）

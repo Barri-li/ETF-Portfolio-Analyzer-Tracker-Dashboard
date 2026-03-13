@@ -1,0 +1,2825 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETF Portfolio Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1025;
+    --purple-deep: #2d1b4e;
+    --purple-mid: #5b3f8a;
+    --purple-light: #9b72cf;
+    --purple-pale: #c8a8e9;
+    --accent: #e8c547;
+    --accent2: #6ee7b7;
+    --accent3: #f97066;
+    --surface: #f5f0fb;
+    --surface2: #ede5f8;
+    --white: #ffffff;
+    --text-muted: #7a6a92;
+    --border: #ddd4f0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--surface);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: 200px;
+    min-width: 200px;
+    background: var(--purple-deep);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 28px 20px;
+    position: fixed;
+    height: 100vh;
+    z-index: 100;
+  }
+
+  .sidebar-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    line-height: 1.3;
+    color: white;
+    margin-bottom: 4px;
+  }
+
+  .sidebar-sub {
+    font-size: 10px;
+    color: var(--purple-pale);
+    letter-spacing: 0.08em;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 24px;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 24px;
+  }
+
+  .nav-btn {
+    background: rgba(255,255,255,0.08);
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.2s;
+    letter-spacing: 0.04em;
+  }
+
+  .nav-btn:hover, .nav-btn.active {
+    background: rgba(255,255,255,0.18);
+  }
+
+  .sidebar-divider {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    margin: 16px 0;
+  }
+
+  .filter-label {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--purple-pale);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+  }
+
+  .filter-group {
+    margin-bottom: 14px;
+  }
+
+  .filter-title {
+    font-size: 9px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .filter-select {
+    width: 100%;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: white;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    appearance: none;
+    outline: none;
+  }
+
+  .sidebar-info {
+    margin-top: auto;
+    background: rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 9.5px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.6;
+  }
+
+  .sidebar-info strong { color: var(--purple-pale); }
+
+  .refresh-badge {
+    display: inline-block;
+    background: rgba(110,231,183,0.15);
+    color: var(--accent2);
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 99px;
+    margin-top: 8px;
+    letter-spacing: 0.06em;
+  }
+
+  /* ─── MAIN ─── */
+  .main {
+    margin-left: 200px;
+    flex: 1;
+    padding: 28px 28px;
+    min-height: 100vh;
+  }
+
+  /* ─── VIEWS ─── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ─── STAT CARDS ─── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--purple-light);
+  }
+
+  .stat-card.green::before { background: var(--accent2); }
+  .stat-card.yellow::before { background: var(--accent); }
+  .stat-card.red::before { background: var(--accent3); }
+
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-pct {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 4px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .stat-bullet {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--purple-light);
+    margin-right: 5px;
+  }
+  .stat-card.green .stat-bullet { background: var(--accent2); }
+  .stat-card.yellow .stat-bullet { background: var(--accent); }
+  .stat-card.red .stat-bullet { background: var(--accent3); }
+
+  /* ─── CONTENT GRID ─── */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .content-grid.thirds {
+    grid-template-columns: 2fr 1fr;
+  }
+
+  .panel {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--ink);
+    letter-spacing: 0.04em;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title-arrow {
+    color: var(--purple-mid);
+    font-size: 11px;
+  }
+
+  /* ─── ETF TABLE ─── */
+  .etf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+
+  .etf-table th {
+    text-align: left;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 0 8px 8px 0;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .etf-table td {
+    padding: 9px 8px 9px 0;
+    border-bottom: 1px solid var(--surface2);
+    vertical-align: middle;
+  }
+
+  .etf-table tr:last-child td { border-bottom: none; }
+
+  .etf-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--ink);
+  }
+
+  .etf-desc {
+    font-size: 9px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+
+  .progress-bar-wrap {
+    background: var(--surface2);
+    border-radius: 99px;
+    height: 5px;
+    width: 80px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--purple-mid);
+    transition: width 0.8s ease;
+  }
+
+  .progress-bar-fill.green { background: var(--accent2); }
+  .progress-bar-fill.yellow { background: var(--accent); }
+  .progress-bar-fill.red { background: var(--accent3); }
+
+  .pct-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-left: 6px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .badge.low { background: #eefbf5; color: #2d9e6b; }
+  .badge.medium { background: #fff8e1; color: #b8860b; }
+  .badge.high { background: #fff0f0; color: #c0392b; }
+
+  .price-up { color: #2d9e6b; font-size: 10px; }
+  .price-down { color: #c0392b; font-size: 10px; }
+  .price-neutral { color: var(--text-muted); font-size: 10px; }
+
+  /* ─── DONUT CHARTS ─── */
+  .donut-row {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+  }
+
+  .donut-wrap {
+    text-align: center;
+  }
+
+  .donut-label-top {
+    font-size: 9px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+  }
+
+  .donut-center-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    fill: var(--ink);
+  }
+
+  .donut-sub-text {
+    font-size: 9px;
+    fill: var(--text-muted);
+  }
+
+  /* ─── AREA CHART ─── */
+  .chart-wrap {
+    position: relative;
+    height: 140px;
+    margin-top: 8px;
+  }
+
+  canvas.area-chart {
+    width: 100% !important;
+    height: 140px !important;
+  }
+
+  .chart-legend {
+    display: flex;
+    gap: 14px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+  }
+
+  /* ─── TICKER BAR ─── */
+  .ticker-row {
+    background: var(--purple-deep);
+    border-radius: 8px;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .ticker-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .ticker-sym {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: white;
+    font-size: 12px;
+  }
+
+  .ticker-price { color: white; font-family: 'DM Mono', monospace; }
+  .ticker-chg.up { color: var(--accent2); }
+  .ticker-chg.down { color: var(--accent3); }
+  .ticker-chg.flat { color: var(--accent); }
+
+  .ticker-divider {
+    width: 1px; height: 20px;
+    background: rgba(255,255,255,0.15);
+  }
+
+  .market-pill {
+    background: rgba(110,231,183,0.15);
+    color: var(--accent2);
+    font-size: 9px;
+    padding: 3px 9px;
+    border-radius: 99px;
+    letter-spacing: 0.08em;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+  }
+
+  .market-pill.closed {
+    background: rgba(249,112,102,0.15);
+    color: var(--accent3);
+  }
+
+  /* ─── DETAIL VIEW ─── */
+  .detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10.5px;
+  }
+
+  .detail-table th {
+    text-align: left;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 0 10px 10px 0;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .detail-table td {
+    padding: 8px 10px 8px 0;
+    border-bottom: 1px solid var(--surface2);
+    vertical-align: middle;
+  }
+
+  .detail-table tr:hover td { background: var(--surface); }
+  .detail-table tr:last-child td { border-bottom: none; }
+
+  .state-pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .state-pill.active { background: #e8f5ff; color: #2980b9; }
+  .state-pill.completed { background: #eefbf5; color: #2d9e6b; }
+  .state-pill.pending { background: #f8f0ff; color: var(--purple-mid); }
+
+  /* ─── ALLOCATION BAR ─── */
+  .alloc-bar {
+    display: flex;
+    height: 10px;
+    border-radius: 99px;
+    overflow: hidden;
+    margin: 12px 0 8px;
+    gap: 2px;
+  }
+
+  .alloc-seg {
+    height: 100%;
+    border-radius: 99px;
+    transition: flex 0.6s ease;
+  }
+
+  .alloc-legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .alloc-leg-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+
+  .alloc-leg-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  /* ─── LOADING / ERROR ─── */
+  .loading-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--purple-pale);
+    animation: pulse 1.2s infinite;
+    margin-right: 4px;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.1); }
+  }
+
+  /* ─── EDIT MODAL ─── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(30, 10, 50, 0.55);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(3px);
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: white;
+    border-radius: 12px;
+    padding: 28px 30px;
+    width: 380px;
+    box-shadow: 0 20px 60px rgba(45, 27, 78, 0.2);
+    animation: modalIn 0.25s ease;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.96) translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .modal h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 20px;
+    color: var(--ink);
+  }
+
+  .form-row {
+    margin-bottom: 14px;
+  }
+
+  .form-row label {
+    display: block;
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 5px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+  }
+
+  .form-row input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--ink);
+    background: var(--surface);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-row input:focus { border-color: var(--purple-mid); }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: flex-end;
+  }
+
+  .btn {
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+  }
+
+  .btn-primary {
+    background: var(--purple-deep);
+    color: white;
+  }
+
+  .btn-primary:hover { background: var(--purple-mid); }
+
+  .btn-ghost {
+    background: var(--surface2);
+    color: var(--text-muted);
+  }
+
+  .btn-ghost:hover { background: var(--border); }
+
+  /* ─── SCROLLBAR ─── */
+  .refresh-btn {
+    margin-top: 10px;
+    width: 100%;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .refresh-btn:hover:not(:disabled) { background: rgba(255,255,255,0.2); }
+  .refresh-btn:active:not(:disabled) { transform: scale(0.97); }
+  .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .refresh-icon { display: inline-block; font-size: 14px; }
+  .refresh-btn.spinning .refresh-icon {
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .mode-tab {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 7px 8px;
+    border-radius: 6px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .mode-tab.active {
+    background: var(--purple-deep);
+    color: white;
+    border-color: var(--purple-deep);
+  }
+
+  .source-badge {
+    display: inline-block;
+    font-size: 8px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-left: 4px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+  }
+  .source-badge.yahoo { background: #e8f0fe; color: #4a6cf7; }
+  .source-badge.google { background: #e8f8f0; color: #2d9e6b; }
+  .source-badge.manual { background: #fff8e1; color: #b8860b; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .content-grid, .content-grid.thirds { grid-template-columns: 1fr; }
+  }
+
+  .fade-in { animation: fadeIn 0.4s ease forwards; opacity: 0; }
+  @keyframes fadeIn { to { opacity: 1; } }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">ETF Portfolio<br>Dashboard</div>
+  <div class="sidebar-sub">MARCH 2026</div>
+
+  <div class="sidebar-nav">
+    <button class="nav-btn active" onclick="switchView('summary')">▶ Summary</button>
+    <button class="nav-btn" onclick="switchView('detail')">▶ Holdings Detail</button>
+    <button class="nav-btn" onclick="switchView('log')">▶ DCA 交易日志</button>
+    <button class="nav-btn" onclick="switchView('analysis')">▶ Analysis</button>
+  </div>
+
+  <hr class="sidebar-divider">
+  <div class="filter-label">Filters</div>
+
+  <div class="filter-group">
+    <div class="filter-title">ETF</div>
+    <select class="filter-select" id="filterEtf" onchange="applyFilters()">
+      <option value="all">All ETFs</option>
+    </select>
+  </div>
+
+  <div class="filter-group">
+    <div class="filter-title">Status</div>
+    <select class="filter-select" id="filterStatus" onchange="applyFilters()">
+      <option value="all">All</option>
+      <option value="gain">Gain</option>
+      <option value="loss">Loss</option>
+    </select>
+  </div>
+
+  <hr class="sidebar-divider">
+
+  <div class="sidebar-info">
+    <strong>Data Sources</strong><br>
+    ① Yahoo Finance (6 combos)<br>
+    ② Google Finance (HTML)<br>
+    ③ Manual fallback<br><br>
+    <strong>Exchange</strong> TSX (CAD)<br><br>
+    <strong>Next DCA</strong> Mar 16, 2026
+    <br>
+    <span id="refreshBadge" class="refresh-badge">⟳ Fetching...</span>
+  </div>
+
+  <button id="manualRefreshBtn" class="refresh-btn" onclick="fetchAll()">
+    <span class="refresh-icon">↻</span> Refresh Prices
+  </button>
+  <button class="refresh-btn" onclick="openAddEtfModal()" style="margin-top:8px;background:rgba(155,114,207,0.18);color:var(--purple-pale);border:1px solid rgba(155,114,207,0.3)">
+    ＋ Manage ETFs
+  </button>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- ═══════════ SUMMARY VIEW ═══════════ -->
+  <div id="view-summary" class="view active">
+
+    <!-- Ticker Bar — dynamically rendered by rebuildTickerBar() -->
+    <div class="ticker-row" id="tickerBar">
+      <div id="marketStatus" class="market-pill closed">● CLOSED</div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="stats-row fade-in">
+      <div class="stat-card">
+        <div class="stat-value" id="statTotal">—<span class="stat-pct" id="statTotalPct"></span></div>
+        <div class="stat-label"><span class="stat-bullet"></span>Total Value (CAD)</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-value" id="statCost">—<span class="stat-pct"></span></div>
+        <div class="stat-label"><span class="stat-bullet"></span>Total Invested</div>
+      </div>
+      <div class="stat-card yellow" id="plCard">
+        <div class="stat-value" id="statPL">—<span class="stat-pct" id="statPLPct"></span></div>
+        <div class="stat-label"><span class="stat-bullet"></span>Unrealized P&L</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-value" id="statNextDCA">$170</div>
+        <div class="stat-label"><span class="stat-bullet"></span>Next DCA (Mar 16)</div>
+      </div>
+    </div>
+
+    <!-- Row 2 -->
+    <div class="content-grid thirds">
+      <!-- ETF Summary Table -->
+      <div class="panel fade-in" style="animation-delay:0.1s">
+        <div class="panel-title">
+          Holdings Overview <span class="panel-title-arrow">▶</span>
+        </div>
+        <table class="etf-table" id="holdingsTable">
+          <thead>
+            <tr>
+              <th>ETF</th>
+              <th>Price</th>
+              <th>Chg</th>
+              <th>Shares</th>
+              <th>P&L</th>
+              <th>DCA</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="holdingsTbody">
+            <tr><td colspan="7" style="color:var(--text-muted);font-size:11px;padding:20px 0">
+              <span class="loading-dot"></span> Loading prices...
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Allocation + Donut -->
+      <div class="panel fade-in" style="animation-delay:0.15s">
+        <div class="panel-title">Allocation <span class="panel-title-arrow">▶</span></div>
+
+        <!-- Allocation Bar -->
+        <div class="alloc-bar" id="allocBar"></div>
+        <div class="alloc-legend" id="allocLegend"></div>
+
+        <div style="height:16px"></div>
+
+        <!-- Mini Donuts -->
+        <div class="donut-row" id="donutRow">
+          <!-- filled by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3 -->
+    <div class="content-grid">
+      <!-- Chart -->
+      <div class="panel fade-in" style="animation-delay:0.2s">
+        <div class="panel-title">Portfolio Value Over Time <span class="panel-title-arrow">▶</span></div>
+        <div class="chart-wrap">
+          <canvas id="areaChart"></canvas>
+        </div>
+        <div class="chart-legend" id="chartLegend"></div>
+      </div>
+
+      <!-- Per-ETF cost basis -->
+      <div class="panel fade-in" style="animation-delay:0.25s">
+        <div class="panel-title">Cost Basis by ETF <span class="panel-title-arrow">▶</span></div>
+        <div id="costBasisPanel"></div>
+      </div>
+    </div>
+
+  </div><!-- end summary -->
+
+
+  <!-- ═══════════ DETAIL VIEW ═══════════ -->
+  <div id="view-detail" class="view">
+
+    <!-- Stat cards reused -->
+    <div class="stats-row fade-in">
+      <div class="stat-card">
+        <div class="stat-value" id="statTotal2">—</div>
+        <div class="stat-label"><span class="stat-bullet"></span>Total Value (CAD)</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-value" id="statCost2">—</div>
+        <div class="stat-label"><span class="stat-bullet"></span>Total Invested</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-value" id="statPL2">—</div>
+        <div class="stat-label"><span class="stat-bullet"></span>Unrealized P&L</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-value" id="statShares2">—</div>
+        <div class="stat-label"><span class="stat-bullet"></span>Total Shares</div>
+      </div>
+    </div>
+
+    <div class="panel fade-in" style="animation-delay:0.05s">
+      <div class="panel-title" style="margin-bottom:16px">
+        Detail Table Overview
+        <button class="btn btn-primary" onclick="switchView('log');setTimeout(()=>openLogModal(null),100)" style="font-size:10px;padding:5px 14px">+ 记录定投</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="detail-table" id="detailTable">
+          <thead>
+            <tr>
+              <th>ETF</th>
+              <th>Full Name</th>
+              <th>Shares</th>
+              <th>Avg Cost</th>
+              <th>Current Price</th>
+              <th>Market Value</th>
+              <th>Cost Basis</th>
+              <th>P&L</th>
+              <th>P&L %</th>
+              <th>DCA/Period</th>
+              <th>Next DCA</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="detailTbody">
+            <tr><td colspan="13" style="color:var(--text-muted);font-size:11px;padding:20px 0">
+              <span class="loading-dot"></span> Loading...
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ DCA LOG VIEW ═══════════ -->
+  <div id="view-log" class="view">
+
+    <div class="stats-row fade-in">
+      <div class="stat-card">
+        <div class="stat-value" id="logStatTrades">—</div>
+        <div class="stat-label"><span class="stat-bullet"></span>总交易次数</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-value" id="logStatTotal">—</div>
+        <div class="stat-label"><span class="stat-bullet"></span>累计投入 (CAD)</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-value" id="logStatShares">—</div>
+        <div class="stat-label"><span class="stat-bullet"></span>累计股数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="logStatAvgPrice">—</div>
+        <div class="stat-label"><span class="stat-bullet"></span>加权均价 (CAD)</div>
+      </div>
+    </div>
+
+    <div class="panel fade-in" style="animation-delay:0.05s">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span class="panel-title" style="margin-bottom:0">DCA 操作记录</span>
+          <select class="filter-select" id="logFilterEtf" onchange="renderLogView()"
+            style="background:var(--surface2);border:1px solid var(--border);color:var(--ink);padding:5px 10px;border-radius:6px;font-family:'DM Mono',monospace;font-size:10px;width:auto">
+            <option value="all">All ETFs</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" onclick="exportLogCSV()" style="font-size:10px;padding:5px 12px">⬇ 导出 CSV</button>
+          <button class="btn btn-primary" onclick="openLogModal(null)" style="font-size:10px;padding:5px 14px">+ 记录定投</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="detail-table" id="logTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>日期</th>
+              <th>ETF</th>
+              <th>成交额 (CAD)</th>
+              <th>股数</th>
+              <th>成交均价</th>
+              <th>DCA 计划额</th>
+              <th>差额</th>
+              <th>备注 Memo</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="logTbody">
+            <tr><td colspan="10" style="padding:32px 0;color:var(--text-muted);font-size:11px;text-align:center">
+              暂无记录 — 点击「记录定投」开始
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="logEtfSummaryGrid" class="content-grid fade-in" style="animation-delay:0.1s;grid-template-columns:repeat(4,1fr)"></div>
+
+  </div><!-- end log view -->
+
+</main>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3 id="modalTitle">Edit Holdings</h3>
+    <input type="hidden" id="modalEtfKey">
+
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="mode-tab active" id="modeTabTotal" onclick="setInputMode('total')">总金额 / 股数</button>
+      <button class="mode-tab" id="modeTabManual" onclick="setInputMode('manual')">手动均价</button>
+    </div>
+
+    <!-- Mode A: total paid + shares → auto avg cost -->
+    <div id="modeTotal">
+      <div class="form-row">
+        <label>总成交金额 (CAD)</label>
+        <input type="number" id="modalTotalPaid" placeholder="e.g. 100" step="0.01" oninput="autoCalcAvg()">
+      </div>
+      <div class="form-row">
+        <label>成交股数</label>
+        <input type="number" id="modalSharesA" placeholder="e.g. 2.5" step="0.0001" oninput="autoCalcAvg()">
+      </div>
+      <div id="calcPreview" style="background:var(--surface2);border-radius:6px;padding:10px 12px;font-size:11px;color:var(--text-muted);margin-bottom:14px;display:none">
+        均价 = <strong id="calcAvgResult" style="color:var(--ink)">—</strong> CAD/股
+      </div>
+    </div>
+
+    <!-- Mode B: manual shares + avg cost -->
+    <div id="modeManual" style="display:none">
+      <div class="form-row">
+        <label>持有股数</label>
+        <input type="number" id="modalSharesB" placeholder="e.g. 2.5" step="0.0001">
+      </div>
+      <div class="form-row">
+        <label>平均成本 (CAD/股)</label>
+        <input type="number" id="modalAvgCost" placeholder="e.g. 40.00" step="0.01">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label>DCA 每期金额 (CAD)</label>
+      <input type="number" id="modalDCA" placeholder="e.g. 65" step="1">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveModal()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- MANUAL PRICE MODAL (all sources failed) -->
+<div class="modal-overlay" id="manualPriceModal">
+  <div class="modal">
+    <h3>⚠ 价格获取失败</h3>
+    <p style="font-size:11px;color:var(--text-muted);margin-bottom:4px;line-height:1.7">
+      Yahoo Finance (6次) 及 Google Finance 均不可用。<br>
+      请手动输入当前价格，或稍后点击重试。
+    </p>
+    <div style="font-size:10px;background:var(--surface2);border-radius:6px;padding:8px 12px;margin-bottom:14px;color:var(--text-muted);line-height:1.6">
+      <strong style="color:var(--ink)">数据来源参考：</strong><br>
+      Wealthsimple App → 持仓页面 · Google Finance → 点击 ↗ 链接
+    </div>
+    <div id="manualPriceSyms"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="retryFetch()">⟳ 重新联网</button>
+      <button class="btn btn-primary" onclick="saveManualPrices()">使用手动价格</button>
+    </div>
+  </div>
+</div>
+
+<!-- DCA LOG MODAL -->
+<div class="modal-overlay" id="logModal">
+  <div class="modal" style="width:480px;max-width:95vw">
+    <h3 id="logModalTitle">记录定投</h3>
+    <input type="hidden" id="logModalId">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-row" style="margin-bottom:0">
+        <label>日期</label>
+        <input type="date" id="logDate">
+      </div>
+      <div class="form-row" style="margin-bottom:0">
+        <label>ETF</label>
+        <select id="logEtf" class="filter-select"
+          style="background:var(--surface);border:1px solid var(--border);color:var(--ink);padding:8px 10px;border-radius:6px;font-family:'DM Mono',monospace;font-size:12px;width:100%;outline:none"
+          onchange="logAutoFillPrice()">
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+      <div class="form-row" style="margin-bottom:0">
+        <label>成交额 (CAD)</label>
+        <input type="number" id="logAmount" placeholder="e.g. 65" step="0.01"
+          oninput="logAutoCalc()">
+      </div>
+      <div class="form-row" style="margin-bottom:0">
+        <label>股数</label>
+        <input type="number" id="logShares" placeholder="e.g. 1.58" step="0.0001"
+          oninput="logAutoCalc()">
+      </div>
+    </div>
+
+    <!-- Auto-calculated price preview -->
+    <div id="logPricePreview" style="background:var(--surface2);border-radius:6px;padding:10px 14px;margin-top:12px;font-size:11px;display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="color:var(--text-muted)">自动计算成交均价</span>
+        <strong id="logCalcPrice" style="color:var(--ink);font-size:14px">—</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+        <span style="color:var(--text-muted)">DCA 计划额</span>
+        <span id="logPlanAmt" style="color:var(--text-muted)">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px">
+        <span style="color:var(--text-muted)">差额</span>
+        <span id="logDiffAmt" style="font-size:11px">—</span>
+      </div>
+    </div>
+
+    <!-- Manual price override -->
+    <div class="form-row" style="margin-top:12px">
+      <label>手动修正成交价 (CAD/股) <span style="color:var(--text-muted);font-weight:400">可选 — 留空则用计算值</span></label>
+      <input type="number" id="logManualPrice" placeholder="仅在成交价不准确时填写" step="0.0001">
+    </div>
+
+    <div class="form-row">
+      <label>备注 Memo</label>
+      <input type="text" id="logMemo" placeholder="自动生成，可修改..." style="font-family:'DM Mono',monospace"
+        oninput="this.dataset.auto='false'">
+    </div>
+
+    <div id="logAutoMemoHint" style="font-size:9px;color:var(--text-muted);margin-top:-10px;margin-bottom:12px">
+      ↑ 将自动生成 Memo，可手动覆盖
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeLogModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveLogEntry()">保存记录</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE MODAL -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" style="width:340px">
+    <h3>确认删除</h3>
+    <p style="font-size:12px;color:var(--text-muted);margin:12px 0 20px;line-height:1.6" id="confirmMsg">确定要删除这条记录吗？</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeConfirm()">取消</button>
+      <button class="btn" style="background:#f97066;color:white" onclick="confirmAction()">删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MANAGE ETFs MODAL ═══════════ -->
+<div class="modal-overlay" id="addEtfModal">
+  <div class="modal" style="width:580px;max-width:96vw;max-height:90vh;overflow-y:auto">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <h3 style="margin:0">Manage ETFs</h3>
+      <button onclick="closeAddEtfModal()" style="background:none;border:none;font-size:18px;color:var(--text-muted);cursor:pointer;line-height:1">✕</button>
+    </div>
+
+    <!-- Tab bar -->
+    <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:18px">
+      <button id="mgTabBtnList" onclick="mgSwitchTab('list')"
+        style="padding:7px 16px;border:none;background:none;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;border-bottom:2px solid var(--purple-mid);color:var(--purple-mid);margin-bottom:-1px">
+        当前组合
+      </button>
+      <button id="mgTabBtnAdd" onclick="mgSwitchTab('add')"
+        style="padding:7px 16px;border:none;background:none;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);margin-bottom:-1px">
+        ＋ 新增 ETF
+      </button>
+    </div>
+
+    <!-- TAB: 当前组合 -->
+    <div id="mgTabList">
+      <div id="manageEtfList" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div style="margin-top:10px;font-size:10px;color:var(--text-muted);text-align:center">
+        点击行内字段直接编辑 · 修改后自动保存
+      </div>
+    </div>
+
+    <!-- TAB: 新增 ETF -->
+    <div id="mgTabAdd" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div class="form-row" style="margin:0">
+          <label>Ticker 代码 <span style="color:#f97066">*</span></label>
+          <input id="newEtfTicker" class="form-input" placeholder="例：CGL.C"
+            oninput="this.value=this.value.toUpperCase().replace(/\s/g,'')">
+        </div>
+        <div class="form-row" style="margin:0">
+          <label>显示名称（可选）</label>
+          <input id="newEtfName" class="form-input" placeholder="例：iShares Gold Bullion">
+        </div>
+      </div>
+
+      <div style="font-size:10px;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;margin:14px 0 8px">DCA 设置</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+        <div class="form-row" style="margin:0">
+          <label>每期金额 (CAD)</label>
+          <input id="newEtfDca" class="form-input" type="number" min="0" placeholder="例：35">
+        </div>
+        <div class="form-row" style="margin:0">
+          <label>定投开始日期</label>
+          <input id="newEtfStart" class="form-input" type="date">
+        </div>
+        <div class="form-row" style="margin:0">
+          <label>定投频率</label>
+          <select id="newEtfFreq" class="form-input" style="background:var(--surface);color:var(--ink)">
+            <option value="biweekly">每两周</option>
+            <option value="monthly">每月</option>
+            <option value="weekly">每周</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+        <div class="form-row" style="margin:0">
+          <label>颜色</label>
+          <input id="newEtfColor" type="color" value="#5ba4cf"
+            style="width:100%;height:36px;border:1px solid var(--border);border-radius:6px;padding:2px;background:var(--surface);cursor:pointer">
+        </div>
+        <div class="form-row" style="margin:0">
+          <label>当前持股数（可选）</label>
+          <input id="newEtfShares" class="form-input" type="number" min="0" step="0.0001" placeholder="例：3.5">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="addNewEtf()" style="width:100%;font-size:11px;padding:10px">＋ 添加到组合</button>
+    </div>
+
+    <div style="margin-top:16px;text-align:right">
+      <button class="btn btn-ghost" onclick="closeAddEtfModal()" style="font-size:11px">关闭</button>
+    </div>
+  </div>
+</div>
+
+  <!-- ═══════════ ANALYSIS VIEW ═══════════ -->
+  <div id="view-analysis" class="view">
+
+    <!-- Header row -->
+    <div class="stats-row fade-in" style="margin-bottom:8px;align-items:center">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px">Pipeline Analysis</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">
+          数据来源：<code style="background:var(--surface2);padding:1px 5px;border-radius:3px">outputs/metrics.json</code> —
+          每次运行 <code style="background:var(--surface2);padding:1px 5px;border-radius:3px">python run_analysis.py</code> 后刷新
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="loadAnalysisData()" style="font-size:10px;padding:5px 14px;margin-left:auto">↻ 重新加载</button>
+    </div>
+
+    <!-- Status banner -->
+    <div id="analysisStatus" class="panel fade-in" style="padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+      <div id="analysisStatusDot" style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);flex-shrink:0"></div>
+      <div id="analysisStatusText" style="font-size:11px;color:var(--text-muted)">正在加载分析数据...</div>
+    </div>
+
+    <!-- ── Section 1: Core Metrics ── -->
+    <div class="panel fade-in" style="margin-bottom:16px">
+      <div class="panel-title">核心指标</div>
+      <div id="analysisMetricsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:12px">
+        <div style="color:var(--text-muted);font-size:11px">加载中...</div>
+      </div>
+    </div>
+
+    <!-- ── Section 2: Correlation warnings ── -->
+    <div class="panel fade-in" style="margin-bottom:16px">
+      <div class="panel-title">相关性分析</div>
+      <div id="analysisCorrelation" style="margin-top:12px">
+        <div style="color:var(--text-muted);font-size:11px">加载中...</div>
+      </div>
+    </div>
+
+    <!-- ── Section 3: DCA Results ── -->
+    <div class="panel fade-in" style="margin-bottom:16px">
+      <div class="panel-title">定投模拟结果</div>
+      <div id="analysisDCAGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-top:12px">
+        <div style="color:var(--text-muted);font-size:11px">加载中...</div>
+      </div>
+      <div id="analysisDCASummary" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)"></div>
+    </div>
+
+    <!-- ── Section 4: Stress Test ── -->
+    <div class="panel fade-in" style="margin-bottom:16px">
+      <div class="panel-title">压力测试</div>
+      <div id="analysisStressContent" style="margin-top:12px">
+        <div style="color:var(--text-muted);font-size:11px">加载中...</div>
+      </div>
+    </div>
+
+    <!-- ── Section 5: Charts (PNG from pipeline) ── -->
+    <div class="panel fade-in" style="margin-bottom:16px">
+      <div class="panel-title">Pipeline 图表</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-bottom:12px">
+        显示 <code style="background:var(--surface2);padding:1px 4px;border-radius:3px">outputs/</code> 文件夹中最新的图表
+      </div>
+      <div id="analysisPngGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+        <!-- PNG charts will be shown here if running locally -->
+        <div style="background:var(--surface2);border-radius:8px;padding:24px;text-align:center;color:var(--text-muted);font-size:11px">
+          <div style="font-size:20px;margin-bottom:8px">🖼</div>
+          <div>本地运行时，PNG图表将在此显示</div>
+          <div style="margin-top:6px;font-size:10px">etf_cumulative_returns.png</div>
+          <div style="font-size:10px">etf_correlation_matrix.png</div>
+          <div style="font-size:10px">etf_stress_test.png</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end view-analysis -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ─── DATA ───────────────────────────────────────────────
+// ─── ETF META (dynamic, stored in localStorage) ─────────
+const DEFAULT_ETF_META = {
+  VFV:  { name: 'Vanguard S&P 500 ETF',         desc: 'US Large Cap Core',      color: '#5b3f8a', dca: 50 },
+  XEQT: { name: 'iShares Core Equity Portfolio', desc: 'Global Diversification', color: '#9b72cf', dca: 65 },
+  VGRO: { name: 'Vanguard Growth ETF Portfolio', desc: '80/20 Equity/Bond',      color: '#e8c547', dca: 30 },
+  TEC:  { name: 'TD Global Tech Leaders ETF',    desc: 'AI & Technology',        color: '#6ee7b7', dca: 25 },
+};
+
+function loadEtfMeta() {
+  try {
+    const saved = localStorage.getItem('etf_meta_v1');
+    return saved ? JSON.parse(saved) : { ...DEFAULT_ETF_META };
+  } catch(e) { return { ...DEFAULT_ETF_META }; }
+}
+function saveEtfMeta(m) { localStorage.setItem('etf_meta_v1', JSON.stringify(m)); }
+
+let ETF_META = loadEtfMeta();
+
+// ─── PORTFOLIO ───────────────────────────────────────────
+function loadPortfolio() {
+  const def = {};
+  Object.entries(ETF_META).forEach(([sym, m]) => {
+    def[sym] = { shares: sym === 'XEQT' ? 2.5 : 0, avgCost: sym === 'XEQT' ? 40.00 : 0,
+                 totalPaid: sym === 'XEQT' ? 100 : 0, dca: m.dca };
+  });
+  try {
+    const saved = localStorage.getItem('etf_dash_v2');
+    return saved ? JSON.parse(saved) : def;
+  } catch(e) { return def; }
+}
+
+function savePortfolio(p) {
+  localStorage.setItem('etf_dash_v2', JSON.stringify(p));
+}
+
+// ─── DCA LOG DATA ────────────────────────────────────────
+// Each entry: { id, date, sym, amount, shares, price, planAmount, memo }
+function loadDcaLog() {
+  try {
+    const saved = localStorage.getItem('etf_dca_log_v1');
+    return saved ? JSON.parse(saved) : seedDcaLog();
+  } catch(e) { return seedDcaLog(); }
+}
+
+function seedDcaLog() {
+  // Pre-seed the known XEQT purchase
+  return [{
+    id: 'seed_1',
+    date: '2026-03-01',
+    sym: 'XEQT',
+    amount: 100,
+    shares: 2.5,
+    price: 40.00,
+    planAmount: 65,
+    memo: '2026-03-01 定投 XEQT · 成交额 $100.00 · 2.5股 @ $40.00/股'
+  }];
+}
+
+function saveDcaLog(log) {
+  localStorage.setItem('etf_dca_log_v1', JSON.stringify(log));
+}
+
+// Rebuild portfolio holdings from DCA log (ONLY if log has entries)
+function rebuildPortfolioFromLog() {
+  if (!dcaLog.length) return;
+  const syms = Object.keys(ETF_META);
+  syms.forEach(sym => {
+    const entries = dcaLog.filter(e => e.sym === sym);
+    if (!entries.length) return;
+    const totalShares = entries.reduce((a, e) => a + (e.shares || 0), 0);
+    const totalPaid   = entries.reduce((a, e) => a + (e.amount || 0), 0);
+    const avgCost = totalShares > 0 ? totalPaid / totalShares : 0;
+    portfolio[sym] = {
+      ...portfolio[sym],
+      shares: totalShares,
+      avgCost,
+      totalPaid,
+    };
+  });
+  savePortfolio(portfolio);
+}
+
+let portfolio = loadPortfolio();
+let dcaLog = loadDcaLog();
+let liveData = {};
+let chartInstance = null;
+
+// ═══════════════════════════════════════════════════════════
+// PRICE FETCH ENGINE — 3-layer fallback
+// Layer 1: Yahoo Finance via 3 CORS proxies (query1 + query2 = 6 attempts)
+// Layer 2: Google Finance HTML scrape via allorigins
+// Layer 3: Manual price entry popup
+// ═══════════════════════════════════════════════════════════
+
+let manualPrices = {};
+let isFetching = false;
+
+// ── helpers ──────────────────────────────────────────────
+const YAHOO_HOSTS = [
+  'query1.finance.yahoo.com',
+  'query2.finance.yahoo.com',
+];
+const CORS_PROXIES = [
+  raw => `https://api.allorigins.win/get?url=${encodeURIComponent(raw)}`,
+  raw => `https://corsproxy.io/?${encodeURIComponent(raw)}`,
+  raw => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(raw)}`,
+];
+
+function unwrapProxy(text) {
+  // allorigins wraps in {contents:"..."}; others return raw JSON
+  try {
+    const j = JSON.parse(text);
+    return j.contents ?? text;
+  } catch { return text; }
+}
+
+function parseYahooJSON(raw) {
+  const d = JSON.parse(raw);
+  const result = d?.chart?.result?.[0];
+  if (!result) throw new Error('no result');
+  const closes = (result.indicators?.quote?.[0]?.close ?? []).filter(v => v != null);
+  const prev = closes.length >= 2 ? closes[closes.length - 2] : closes[closes.length - 1];
+  const curr = result.meta?.regularMarketPrice;
+  if (!curr) throw new Error('no price');
+  const chg = curr - prev;
+  const chgPct = prev ? (chg / prev) * 100 : 0;
+  return { price: curr, chg, chgPct, prev, source: 'yahoo' };
+}
+
+// ── Layer 1: Yahoo Finance ────────────────────────────────
+async function fetchYahoo(sym) {
+  const path = `/v8/finance/chart/${sym}.TO?interval=1d&range=5d`;
+  for (const host of YAHOO_HOSTS) {
+    const yahooUrl = `https://${host}${path}`;
+    for (const proxyFn of CORS_PROXIES) {
+      try {
+        const res = await fetch(proxyFn(yahooUrl), {
+          signal: AbortSignal.timeout(7000),
+        });
+        if (!res.ok) continue;
+        const text = await res.text();
+        const raw = unwrapProxy(text);
+        return parseYahooJSON(raw);
+      } catch { /* try next */ }
+    }
+  }
+  return null; // all 6 yahoo attempts failed
+}
+
+// ── Layer 2: Google Finance HTML scrape ──────────────────
+// Fetches https://www.google.com/finance/quote/{SYM}:TSX
+// Extracts price from the meta og:title or inline JSON patterns.
+// Completely free, no key required.
+async function fetchGoogleFinance(sym) {
+  const gfUrl = `https://www.google.com/finance/quote/${sym}:TSX`;
+  // allorigins is best at returning HTML
+  const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(gfUrl)}`;
+  try {
+    const res = await fetch(proxy, { signal: AbortSignal.timeout(9000) });
+    if (!res.ok) throw new Error('proxy err');
+    const j = await res.json();
+    const html = j.contents ?? '';
+    if (!html) throw new Error('empty');
+
+    // Pattern 1: data-last-price attribute (most reliable)
+    let m = html.match(/data-last-price="([0-9.]+)"/);
+    if (m) {
+      const price = parseFloat(m[1]);
+
+      // Try to get previous close for change calc
+      let prev = price;
+      const mPrev = html.match(/data-prev-close="([0-9.]+)"/);
+      if (mPrev) prev = parseFloat(mPrev[1]);
+
+      const chg = price - prev;
+      const chgPct = prev ? (chg / prev) * 100 : 0;
+      return { price, chg, chgPct, prev, source: 'google' };
+    }
+
+    // Pattern 2: YTD / current price from og:description
+    // "VFV • TSX • CAD • 163.14 (0.25%)"
+    m = html.match(/\b(\d{2,4}\.\d{2})\s*[\(\u0028]/);
+    if (m) {
+      const price = parseFloat(m[1]);
+      return { price, chg: 0, chgPct: 0, prev: price, source: 'google' };
+    }
+
+    // Pattern 3: JSON-LD or window.__INITIAL_STATE__ fragments
+    m = html.match(/"price"\s*:\s*"?([\d.]+)"?/);
+    if (m) {
+      const price = parseFloat(m[1]);
+      return { price, chg: 0, chgPct: 0, prev: price, source: 'google' };
+    }
+
+    throw new Error('no price pattern matched');
+  } catch (e) {
+    // Try corsproxy as secondary for Google Finance
+    try {
+      const proxy2 = `https://corsproxy.io/?${encodeURIComponent(gfUrl)}`;
+      const res2 = await fetch(proxy2, { signal: AbortSignal.timeout(9000) });
+      const html2 = await res2.text();
+      const m2 = html2.match(/data-last-price="([0-9.]+)"/);
+      if (m2) {
+        const price = parseFloat(m2[1]);
+        const mPrev = html2.match(/data-prev-close="([0-9.]+)"/);
+        const prev = mPrev ? parseFloat(mPrev[1]) : price;
+        const chg = price - prev;
+        const chgPct = prev ? (chg / prev) * 100 : 0;
+        return { price, chg, chgPct, prev, source: 'google' };
+      }
+    } catch { /* give up */ }
+    return null;
+  }
+}
+
+// ── Master fetch per symbol ───────────────────────────────
+async function fetchSymbol(sym) {
+  // 0. Manual override wins immediately
+  if (manualPrices[sym]) {
+    const p = manualPrices[sym];
+    return { price: p, chg: 0, chgPct: 0, prev: p, source: 'manual' };
+  }
+
+  // 1. Yahoo Finance (6 combos)
+  const yahoo = await fetchYahoo(sym);
+  if (yahoo) return yahoo;
+
+  // 2. Google Finance HTML scrape
+  const google = await fetchGoogleFinance(sym);
+  if (google) return google;
+
+  // 3. Failed — caller will show manual prompt
+  return null;
+}
+
+// ── Fetch all + UI update ─────────────────────────────────
+async function fetchAll() {
+  if (isFetching) return;
+  isFetching = true;
+
+  const badge = document.getElementById('refreshBadge');
+  const btn = document.getElementById('manualRefreshBtn');
+  badge.textContent = '⟳ Fetching...';
+  badge.style.background = '';
+  badge.style.color = '';
+  if (btn) { btn.classList.add('spinning'); btn.disabled = true; }
+
+  const syms = Object.keys(ETF_META);
+  const results = await Promise.allSettled(syms.map(s => fetchSymbol(s)));
+
+  const failed = [];
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled' && r.value) {
+      liveData[syms[i]] = r.value;
+    } else {
+      liveData[syms[i]] = null;
+      failed.push(syms[i]);
+    }
+  });
+
+  const now = new Date().toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
+
+  if (failed.length === 0) {
+    // Show source breakdown
+    const srcMap = {};
+    syms.forEach(s => { srcMap[liveData[s]?.source] = (srcMap[liveData[s]?.source] || 0) + 1; });
+    const srcLabel = Object.entries(srcMap).map(([k,v]) => `${v}×${k}`).join(' ');
+    badge.textContent = `✓ ${srcLabel} · ${now}`;
+    badge.style.background = 'rgba(110,231,183,0.15)';
+    badge.style.color = '#6ee7b7';
+  } else if (failed.length < syms.length) {
+    badge.textContent = `⚠ ${failed.join(',')} failed · ${now}`;
+    badge.style.background = 'rgba(232,197,71,0.15)';
+    badge.style.color = '#e8c547';
+    showManualPricePrompt(failed);
+  } else {
+    badge.textContent = `✗ All failed · ${now}`;
+    badge.style.background = 'rgba(249,112,102,0.15)';
+    badge.style.color = '#f97066';
+    showManualPricePrompt(failed);
+  }
+
+  if (btn) { btn.classList.remove('spinning'); btn.disabled = false; }
+  isFetching = false;
+  renderAll();
+}
+
+// ── Manual price popup ────────────────────────────────────
+function showManualPricePrompt(failedSyms) {
+  if (!failedSyms.length) return;
+  document.getElementById('manualPriceSyms').innerHTML = failedSyms.map(sym => `
+    <div class="form-row">
+      <label>${sym} — 当前价格 (CAD)</label>
+      <div style="position:relative">
+        <input type="number" id="mp-${sym}" placeholder="从 Wealthsimple / Google Finance 输入" step="0.01"
+          value="${manualPrices[sym] || ''}" style="padding-right:70px">
+        <a href="https://www.google.com/finance/quote/${sym}:TSX" target="_blank"
+          style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:9px;color:var(--purple-mid);text-decoration:none;white-space:nowrap">
+          Google ↗
+        </a>
+      </div>
+    </div>`).join('');
+  document.getElementById('manualPriceModal').classList.add('open');
+}
+
+function saveManualPrices() {
+  Object.keys(ETF_META).forEach(sym => {
+    const el = document.getElementById(`mp-${sym}`);
+    if (!el) return;
+    const p = parseFloat(el.value);
+    if (p > 0) {
+      manualPrices[sym] = p;
+      liveData[sym] = { price: p, chg: 0, chgPct: 0, prev: p, source: 'manual' };
+    }
+  });
+  document.getElementById('manualPriceModal').classList.remove('open');
+  renderAll();
+}
+
+function clearManualPrices() {
+  manualPrices = {};
+  document.getElementById('manualPriceModal').classList.remove('open');
+  fetchAll();
+}
+
+// ─── MARKET STATUS ───────────────────────────────────────
+function isMarketOpen() {
+  const now = new Date();
+  const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/Toronto' }));
+  const day = et.getDay();
+  const h = et.getHours(), m = et.getMinutes();
+  const mins = h * 60 + m;
+  return day >= 1 && day <= 5 && mins >= 570 && mins < 960; // 9:30 - 16:00
+}
+
+// ─── RENDER ALL ──────────────────────────────────────────
+function renderAll() {
+  updateMarketStatus();
+  updateTickerBar();
+  updateStatCards();
+  updateHoldingsTable();
+  updateAllocation();
+  updateDonutRow();
+  updateAreaChart();
+  updateCostBasisPanel();
+  updateDetailTable();
+  updateDetailStats();
+}
+
+function updateMarketStatus() {
+  const el = document.getElementById('marketStatus');
+  if (isMarketOpen()) {
+    el.className = 'market-pill';
+    el.textContent = '● OPEN';
+  } else {
+    el.className = 'market-pill closed';
+    el.textContent = '● CLOSED';
+  }
+}
+
+function fmt(n, dec=2) {
+  if (n == null || isNaN(n)) return '—';
+  return n.toFixed(dec);
+}
+
+function fmtCAD(n) {
+  if (n == null || isNaN(n)) return '—';
+  return '$' + n.toFixed(2);
+}
+
+function updateTickerBar() {
+  Object.keys(ETF_META).forEach(sym => {
+    const d = liveData[sym];
+    const priceEl = document.getElementById(`tick-${sym}`);
+    const chgEl = document.getElementById(`tickchg-${sym}`);
+    if (!priceEl) return;
+    if (d) {
+      const srcBadge = `<span class="source-badge ${d.source}">${d.source}</span>`;
+      priceEl.innerHTML = `$${fmt(d.price)}${srcBadge}`;
+      const up = d.chg >= 0;
+      chgEl.textContent = `${up?'+':''}${fmt(d.chg)} (${up?'+':''}${fmt(d.chgPct)}%)`;
+      chgEl.className = `ticker-chg ${up?'up':'down'}`;
+    } else {
+      priceEl.textContent = '—';
+      chgEl.textContent = '—';
+      chgEl.className = 'ticker-chg flat';
+    }
+  });
+}
+
+function calcPortfolioTotals() {
+  let totalValue = 0, totalCost = 0;
+  Object.entries(portfolio).forEach(([sym, h]) => {
+    if (h.shares > 0) {
+      const cost = (h.totalPaid > 0) ? h.totalPaid : h.shares * h.avgCost;
+      totalCost += cost;
+      const d = liveData[sym];
+      totalValue += d ? h.shares * d.price : cost;
+    }
+  });
+  return { totalValue, totalCost, pl: totalValue - totalCost };
+}
+
+function updateStatCards() {
+  const { totalValue, totalCost, pl } = calcPortfolioTotals();
+  const plPct = totalCost > 0 ? (pl / totalCost) * 100 : 0;
+
+  document.getElementById('statTotal').innerHTML =
+    `${fmtCAD(totalValue)}<span class="stat-pct"></span>`;
+  document.getElementById('statCost').innerHTML =
+    `${fmtCAD(totalCost)}<span class="stat-pct"></span>`;
+
+  const sign = pl >= 0 ? '+' : '';
+  document.getElementById('statPL').innerHTML =
+    `${sign}${fmtCAD(pl)}<span class="stat-pct" id="statPLPct"> (${sign}${fmt(plPct)}%)</span>`;
+
+  const plCard = document.getElementById('plCard');
+  plCard.querySelector('::before'); // just check
+  if (pl >= 0) {
+    plCard.style.setProperty('--card-top', 'var(--accent2)');
+    plCard.className = 'stat-card green';
+  } else {
+    plCard.className = 'stat-card red';
+  }
+}
+
+function updateHoldingsTable() {
+  const tbody = document.getElementById('holdingsTbody');
+  const filterEtf = document.getElementById('filterEtf').value;
+  const filterStatus = document.getElementById('filterStatus').value;
+
+  let rows = '';
+  Object.entries(portfolio).forEach(([sym, h]) => {
+    if (filterEtf !== 'all' && filterEtf !== sym) return;
+
+    const d = liveData[sym];
+    const price = d ? d.price : null;
+    const chg = d ? d.chg : null;
+    const chgPct = d ? d.chgPct : null;
+
+    const marketVal = (h.shares > 0 && price) ? h.shares * price : 0;
+    const costVal = h.shares * h.avgCost;
+    const pl = marketVal - costVal;
+    const plPct = costVal > 0 ? (pl / costVal) * 100 : 0;
+
+    if (filterStatus === 'gain' && pl <= 0) return;
+    if (filterStatus === 'loss' && pl >= 0) return;
+
+    const priceStr = price ? `$${fmt(price)}` : '<span class="loading-dot"></span>';
+    const chgClass = chg == null ? 'price-neutral' : chg >= 0 ? 'price-up' : 'price-down';
+    const chgStr = chg != null ? `${chg>=0?'+':''}${fmt(chgPct)}%` : '—';
+
+    const plStr = h.shares > 0 && price
+      ? `<span class="${pl>=0?'price-up':'price-down'}">${pl>=0?'+':''}$${fmt(Math.abs(pl))} (${pl>=0?'+':''}${fmt(plPct)}%)</span>`
+      : '<span class="price-neutral">—</span>';
+
+    const sharesStr = h.shares > 0 ? fmt(h.shares, 4) : '<span style="color:var(--text-muted)">0</span>';
+
+    rows += `
+      <tr>
+        <td>
+          <div class="etf-name">${sym}</div>
+          <div class="etf-desc">${ETF_META[sym].desc}</div>
+        </td>
+        <td>${priceStr}</td>
+        <td><span class="${chgClass}">${chgStr}</span></td>
+        <td>${sharesStr}</td>
+        <td>${plStr}</td>
+        <td>
+          <span class="badge low">$${ETF_META[sym].dca}/bi-wk</span>
+        </td>
+        <td>
+          <button class="btn btn-ghost" style="font-size:9px;padding:3px 10px" onclick="openEditModal('${sym}')">✏ Edit</button>
+        </td>
+      </tr>`;
+  });
+
+  tbody.innerHTML = rows || '<tr><td colspan="7" style="color:var(--text-muted);font-size:11px;padding:16px 0">No data</td></tr>';
+}
+
+function updateAllocation() {
+  const bar = document.getElementById('allocBar');
+  const legend = document.getElementById('allocLegend');
+
+  const totals = {};
+  let grand = 0;
+  Object.entries(portfolio).forEach(([sym, h]) => {
+    if (h.shares > 0 && liveData[sym]) {
+      const val = h.shares * liveData[sym].price;
+      totals[sym] = val;
+      grand += val;
+    } else {
+      totals[sym] = 0;
+    }
+  });
+
+  if (grand === 0) {
+    // use DCA allocation as fallback
+    const dcaTot = Object.values(ETF_META).reduce((a, m) => a + m.dca, 0);
+    bar.innerHTML = Object.entries(ETF_META).map(([sym, m]) => `
+      <div class="alloc-seg" style="flex:${m.dca/dcaTot};background:${m.color}"></div>
+    `).join('');
+    legend.innerHTML = Object.entries(ETF_META).map(([sym, m]) => `
+      <div class="alloc-leg-item">
+        <div class="alloc-leg-dot" style="background:${m.color}"></div>
+        ${sym} ${Math.round(m.dca/dcaTot*100)}%
+      </div>
+    `).join('');
+    return;
+  }
+
+  bar.innerHTML = Object.entries(totals).map(([sym, val]) => `
+    <div class="alloc-seg" style="flex:${val/grand};background:${ETF_META[sym].color}"></div>
+  `).join('');
+  legend.innerHTML = Object.entries(totals).map(([sym, val]) => `
+    <div class="alloc-leg-item">
+      <div class="alloc-leg-dot" style="background:${ETF_META[sym].color}"></div>
+      ${sym} ${grand>0?Math.round(val/grand*100):0}%
+    </div>
+  `).join('');
+}
+
+function makeDonut(sym, pct, color, value) {
+  const r = 26, cx = 30, cy = 30;
+  const circ = 2 * Math.PI * r;
+  const dash = (pct / 100) * circ;
+  return `
+    <div class="donut-wrap">
+      <div class="donut-label-top">${sym}</div>
+      <svg width="60" height="60" viewBox="0 0 60 60">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#ede5f8" stroke-width="7"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="7"
+          stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${circ/4}" stroke-linecap="round"
+          transform="rotate(-90 ${cx} ${cy})" style="transform-origin:center;transform:rotate(-90deg)"/>
+        <text x="${cx}" y="${cy+4}" text-anchor="middle" class="donut-center-text" style="font-size:10px;font-family:'Syne',sans-serif;font-weight:800;fill:#1a1025">${pct}%</text>
+      </svg>
+      <div style="font-size:9px;color:var(--text-muted);margin-top:2px">${value}</div>
+    </div>`;
+}
+
+function updateDonutRow() {
+  const row = document.getElementById('donutRow');
+  const { totalValue, totalCost } = calcPortfolioTotals();
+  const grand = totalValue || 1;
+
+  row.innerHTML = Object.entries(portfolio).map(([sym, h]) => {
+    const d = liveData[sym];
+    const val = (h.shares > 0 && d) ? h.shares * d.price : 0;
+    const pct = grand > 0 ? Math.round(val / grand * 100) : Math.round(ETF_META[sym].dca / 170 * 100);
+    const valStr = val > 0 ? fmtCAD(val) : `DCA $${ETF_META[sym].dca}`;
+    return makeDonut(sym, pct, ETF_META[sym].color, valStr);
+  }).join('');
+}
+
+function updateAreaChart() {
+  const ctx = document.getElementById('areaChart').getContext('2d');
+  const labels = ['Jan', 'Feb', 'Mar 1', 'Mar 8', 'Now'];
+
+  // Build realistic simulated history per ETF (replace with real data if you log it)
+  const datasets = Object.entries(ETF_META).map(([sym, m]) => {
+    const d = liveData[sym];
+    const h = portfolio[sym];
+    const curr = (d && h.shares > 0) ? h.shares * d.price : h.shares * h.avgCost;
+    const base = h.shares * h.avgCost;
+    const sim = [base * 0.97, base * 0.99, base * 1.01, curr * 0.98, curr];
+    return {
+      label: sym,
+      data: sim,
+      borderColor: m.color,
+      backgroundColor: m.color + '22',
+      fill: true,
+      tension: 0.4,
+      borderWidth: 2,
+      pointRadius: 2,
+    };
+  });
+
+  if (chartInstance) chartInstance.destroy();
+
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#2d1b4e',
+          titleFont: { family: 'Syne', size: 11 },
+          bodyFont: { family: 'DM Mono', size: 10 },
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#ede5f8' },
+          ticks: { font: { family: 'DM Mono', size: 9 }, color: '#7a6a92' }
+        },
+        y: {
+          grid: { color: '#ede5f8' },
+          ticks: {
+            font: { family: 'DM Mono', size: 9 }, color: '#7a6a92',
+            callback: v => '$' + v.toFixed(0)
+          }
+        }
+      }
+    }
+  });
+
+  // Chart legend
+  document.getElementById('chartLegend').innerHTML = Object.entries(ETF_META).map(([sym, m]) => `
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${m.color}"></div>${sym}
+    </div>`).join('');
+}
+
+function updateCostBasisPanel() {
+  const el = document.getElementById('costBasisPanel');
+  let html = '';
+  Object.entries(portfolio).forEach(([sym, h]) => {
+    const d = liveData[sym];
+    const curr = d ? d.price : null;
+    const pl = (curr && h.shares > 0) ? (curr - h.avgCost) * h.shares : null;
+    const plPct = (curr && h.avgCost > 0) ? ((curr - h.avgCost) / h.avgCost) * 100 : null;
+    const barW = h.avgCost > 0 && curr ? Math.min(100, (curr / h.avgCost) * 50) : 0;
+    const barColor = plPct == null ? 'purple' : plPct >= 0 ? 'green' : 'red';
+
+    html += `
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:11px">${sym}</span>
+          <span style="font-size:9px;color:var(--text-muted)">
+            ${h.shares > 0 ? `${fmt(h.shares,3)} shares @ $${fmt(h.avgCost)}` : 'No holdings'}
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="progress-bar-wrap" style="width:100%">
+            <div class="progress-bar-fill ${barColor}" style="width:${barW}%"></div>
+          </div>
+          <span style="font-size:10px;color:${plPct==null?'var(--text-muted)':plPct>=0?'#2d9e6b':'#c0392b'};white-space:nowrap;min-width:70px;text-align:right">
+            ${pl != null ? `${pl>=0?'+':''}$${fmt(Math.abs(pl))} (${pl>=0?'+':''}${fmt(plPct)}%)` : '—'}
+          </span>
+        </div>
+      </div>`;
+  });
+  el.innerHTML = html;
+}
+
+// ─── DETAIL TABLE ────────────────────────────────────────
+function updateDetailTable() {
+  const tbody = document.getElementById('detailTbody');
+  const filterEtf = document.getElementById('filterEtf').value;
+
+  let rows = '';
+  Object.entries(portfolio).forEach(([sym, h]) => {
+    if (filterEtf !== 'all' && filterEtf !== sym) return;
+
+    const d = liveData[sym];
+    const price = d ? d.price : null;
+    const mktVal = (h.shares > 0 && price) ? h.shares * price : null;
+    const cost = h.shares * h.avgCost;
+    const pl = mktVal != null ? mktVal - cost : null;
+    const plPct = (pl != null && cost > 0) ? (pl / cost) * 100 : null;
+    const status = h.shares > 0 ? (pl >= 0 ? 'completed' : 'active') : 'pending';
+    const statusLabel = h.shares > 0 ? (pl >= 0 ? 'Gain' : 'Loss') : 'Pending';
+
+    rows += `
+      <tr>
+        <td><span style="font-family:'Syne',sans-serif;font-weight:700">${sym}</span></td>
+        <td style="color:var(--text-muted);max-width:180px">${ETF_META[sym].name}</td>
+        <td>${h.shares > 0 ? fmt(h.shares,4) : '—'}</td>
+        <td>${h.avgCost > 0 ? fmtCAD(h.avgCost) : '—'}</td>
+        <td>${price ? fmtCAD(price) : '<span class="loading-dot"></span>'}</td>
+        <td>${mktVal != null ? fmtCAD(mktVal) : '—'}</td>
+        <td>${cost > 0 ? fmtCAD(cost) : '—'}</td>
+        <td>${pl != null ? `<span class="${pl>=0?'price-up':'price-down'}">${pl>=0?'+':''}${fmtCAD(Math.abs(pl))}</span>` : '—'}</td>
+        <td>${plPct != null ? `<span class="${plPct>=0?'price-up':'price-down'}">${plPct>=0?'+':''}${fmt(plPct)}%</span>` : '—'}</td>
+        <td>$${ETF_META[sym].dca}/bi-wk</td>
+        <td style="color:var(--text-muted);font-size:10px">Mar 16, 2026</td>
+        <td><span class="state-pill ${status}">${statusLabel}</span></td>
+        <td>
+          <button class="btn btn-ghost" style="font-size:9px;padding:3px 10px" onclick="openEditModal('${sym}')">✏ Edit</button>
+        </td>
+      </tr>`;
+  });
+
+  tbody.innerHTML = rows || '<tr><td colspan="13" style="color:var(--text-muted);padding:20px 0;font-size:11px">No data</td></tr>';
+}
+
+function updateDetailStats() {
+  const { totalValue, totalCost, pl } = calcPortfolioTotals();
+  const totalShares = Object.values(portfolio).reduce((a, h) => a + h.shares, 0);
+
+  document.getElementById('statTotal2').textContent = fmtCAD(totalValue);
+  document.getElementById('statCost2').textContent = fmtCAD(totalCost);
+  const sign = pl >= 0 ? '+' : '';
+  document.getElementById('statPL2').textContent = `${sign}${fmtCAD(pl)}`;
+  document.getElementById('statShares2').textContent = fmt(totalShares, 2);
+}
+
+// ─── INPUT MODE ──────────────────────────────────────────
+let currentInputMode = 'total';
+
+function setInputMode(mode) {
+  currentInputMode = mode;
+  document.getElementById('modeTotal').style.display = mode === 'total' ? '' : 'none';
+  document.getElementById('modeManual').style.display = mode === 'manual' ? '' : 'none';
+  document.getElementById('modeTabTotal').classList.toggle('active', mode === 'total');
+  document.getElementById('modeTabManual').classList.toggle('active', mode === 'manual');
+}
+
+function autoCalcAvg() {
+  const total = parseFloat(document.getElementById('modalTotalPaid').value);
+  const shares = parseFloat(document.getElementById('modalSharesA').value);
+  const preview = document.getElementById('calcPreview');
+  if (total > 0 && shares > 0) {
+    document.getElementById('calcAvgResult').textContent = `$${(total / shares).toFixed(4)}`;
+    preview.style.display = '';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+// ─── MODAL ───────────────────────────────────────────────
+function openEditModal(sym) {
+  const h = portfolio[sym];
+  document.getElementById('modalTitle').textContent = `Edit Holdings — ${sym}`;
+  document.getElementById('modalEtfKey').value = sym;
+  document.getElementById('modalDCA').value = h.dca || ETF_META[sym].dca;
+
+  const totalPaid = h.totalPaid || (h.shares * h.avgCost) || 0;
+  document.getElementById('modalTotalPaid').value = totalPaid > 0 ? totalPaid : '';
+  document.getElementById('modalSharesA').value = h.shares || '';
+  document.getElementById('modalSharesB').value = h.shares || '';
+  document.getElementById('modalAvgCost').value = h.avgCost || '';
+
+  setInputMode(h.totalPaid > 0 ? 'total' : 'manual');
+  autoCalcAvg();
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+}
+
+function saveModal() {
+  const sym = document.getElementById('modalEtfKey').value;
+  const dca = parseFloat(document.getElementById('modalDCA').value) || ETF_META[sym].dca;
+  let shares, avgCost, totalPaid;
+
+  if (currentInputMode === 'total') {
+    totalPaid = parseFloat(document.getElementById('modalTotalPaid').value) || 0;
+    shares = parseFloat(document.getElementById('modalSharesA').value) || 0;
+    avgCost = (totalPaid > 0 && shares > 0) ? totalPaid / shares : 0;
+  } else {
+    shares = parseFloat(document.getElementById('modalSharesB').value) || 0;
+    avgCost = parseFloat(document.getElementById('modalAvgCost').value) || 0;
+    totalPaid = shares * avgCost;
+  }
+
+  portfolio[sym] = { shares, avgCost, totalPaid, dca };
+  savePortfolio(portfolio);
+  closeModal();
+  renderAll();
+}
+
+function retryFetch() {
+  document.getElementById('manualPriceModal').classList.remove('open');
+  fetchAll();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DCA LOG — render, modal, CRUD, export
+// ═══════════════════════════════════════════════════════════
+
+function renderLogView() {
+  const filterSym = document.getElementById('logFilterEtf')?.value ?? 'all';
+  const filtered = filterSym === 'all' ? dcaLog : dcaLog.filter(e => e.sym === filterSym);
+  const sorted   = [...filtered].sort((a, b) => b.date.localeCompare(a.date)); // newest first
+
+  // Stats
+  const totalTrades  = filtered.length;
+  const totalAmount  = filtered.reduce((a, e) => a + (e.amount || 0), 0);
+  const totalShares  = filtered.reduce((a, e) => a + (e.shares || 0), 0);
+  const weightedAvg  = totalShares > 0 ? totalAmount / totalShares : 0;
+
+  document.getElementById('logStatTrades').textContent  = totalTrades;
+  document.getElementById('logStatTotal').textContent   = fmtCAD(totalAmount);
+  document.getElementById('logStatShares').textContent  = fmt(totalShares, 4);
+  document.getElementById('logStatAvgPrice').textContent = weightedAvg > 0 ? fmtCAD(weightedAvg) : '—';
+
+  // Table
+  const tbody = document.getElementById('logTbody');
+  if (!sorted.length) {
+    tbody.innerHTML = `<tr><td colspan="10" style="padding:32px 0;color:var(--text-muted);font-size:11px;text-align:center">
+      暂无记录 — 点击「记录定投」开始
+    </td></tr>`;
+  } else {
+    tbody.innerHTML = sorted.map((e, idx) => {
+      const diff = (e.amount || 0) - (e.planAmount || 0);
+      const diffStr = e.planAmount
+        ? `<span style="color:${Math.abs(diff)<0.1?'var(--text-muted)':diff>0?'var(--accent3)':'var(--accent2)'}">${diff>=0?'+':''}${fmtCAD(diff)}</span>`
+        : '—';
+      const colorDot = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${ETF_META[e.sym]?.color ?? '#aaa'};margin-right:5px"></span>`;
+      return `<tr>
+        <td style="color:var(--text-muted)">${totalTrades - idx}</td>
+        <td style="white-space:nowrap">${e.date}</td>
+        <td>${colorDot}<strong style="font-family:'Syne',sans-serif">${e.sym}</strong></td>
+        <td><strong>$${fmt(e.amount, 2)}</strong></td>
+        <td>${fmt(e.shares, 4)}</td>
+        <td style="font-family:'Syne',sans-serif;font-weight:700">$${fmt(e.price, 4)}</td>
+        <td style="color:var(--text-muted)">$${fmt(e.planAmount, 2)}</td>
+        <td>${diffStr}</td>
+        <td style="color:var(--text-muted);font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${e.memo ?? ''}">${e.memo ?? '—'}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-ghost" style="font-size:9px;padding:2px 8px;margin-right:4px" onclick="openLogModal('${e.id}')">✏</button>
+          <button class="btn" style="font-size:9px;padding:2px 8px;background:#fff0f0;color:#c0392b;border:none;border-radius:4px;cursor:pointer" onclick="deleteLogEntry('${e.id}')">✕</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Per-ETF summary cards
+  const grid = document.getElementById('logEtfSummaryGrid');
+  grid.innerHTML = Object.entries(ETF_META).map(([sym, meta]) => {
+    const entries = dcaLog.filter(e => e.sym === sym);
+    const amt = entries.reduce((a, e) => a + (e.amount || 0), 0);
+    const shs = entries.reduce((a, e) => a + (e.shares || 0), 0);
+    const avg = shs > 0 ? amt / shs : 0;
+    const livePrice = liveData[sym]?.price;
+    const unrealized = (livePrice && shs > 0) ? (livePrice - avg) * shs : null;
+    const unrealPct  = (unrealized != null && amt > 0) ? (unrealized / amt) * 100 : null;
+
+    return `<div class="panel" style="border-top:3px solid ${meta.color}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px">${sym}</span>
+        <span style="font-size:9px;color:var(--text-muted)">${entries.length} 笔定投</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">累计投入</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:8px">${amt > 0 ? fmtCAD(amt) : '—'}</div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted)">
+        <span>持有 ${fmt(shs, 3)} 股</span>
+        <span>均价 ${avg > 0 ? fmtCAD(avg) : '—'}</span>
+      </div>
+      ${unrealized != null ? `<div style="margin-top:8px;font-size:11px;color:${unrealized>=0?'#2d9e6b':'#c0392b'};font-family:'Syne',sans-serif;font-weight:700">
+        ${unrealized>=0?'+':''}${fmtCAD(unrealized)} (${unrealPct>=0?'+':''}${fmt(unrealPct)}%)
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── Log Modal ─────────────────────────────────────────────
+let pendingConfirmFn = null;
+
+function openLogModal(entryId) {
+  const modal = document.getElementById('logModal');
+  const isEdit = entryId != null;
+  document.getElementById('logModalTitle').textContent = isEdit ? '编辑定投记录' : '记录定投';
+  document.getElementById('logModalId').value = entryId ?? '';
+
+  if (isEdit) {
+    const e = dcaLog.find(x => x.id === entryId);
+    if (!e) return;
+    document.getElementById('logDate').value = e.date;
+    document.getElementById('logEtf').value  = e.sym;
+    document.getElementById('logAmount').value = e.amount;
+    document.getElementById('logShares').value = e.shares;
+    document.getElementById('logManualPrice').value = '';
+    document.getElementById('logMemo').value = e.memo ?? '';
+  } else {
+    // Default: today, first ETF with a live price
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById('logDate').value = today;
+    document.getElementById('logEtf').value  = 'XEQT';
+    document.getElementById('logAmount').value = '';
+    document.getElementById('logShares').value = '';
+    document.getElementById('logManualPrice').value = '';
+    document.getElementById('logMemo').value = '';
+  }
+
+  logAutoCalc();
+  modal.classList.add('open');
+}
+
+function closeLogModal() {
+  document.getElementById('logModal').classList.remove('open');
+}
+
+function logAutoFillPrice() {
+  // When ETF changes, optionally pre-fill shares hint based on live price
+  logAutoCalc();
+}
+
+function logAutoCalc() {
+  const amount  = parseFloat(document.getElementById('logAmount').value) || 0;
+  const shares  = parseFloat(document.getElementById('logShares').value) || 0;
+  const sym     = document.getElementById('logEtf').value;
+  const preview = document.getElementById('logPricePreview');
+  const planAmt = ETF_META[sym]?.dca ?? 0;
+
+  if (amount > 0 && shares > 0) {
+    const calcPrice = amount / shares;
+    const diff = amount - planAmt;
+    document.getElementById('logCalcPrice').textContent = `$${calcPrice.toFixed(4)}/股`;
+    document.getElementById('logPlanAmt').textContent = `$${fmt(planAmt, 2)}`;
+    document.getElementById('logDiffAmt').innerHTML =
+      `<span style="color:${Math.abs(diff)<0.01?'var(--text-muted)':diff>0?'#c0392b':'#2d9e6b'}">${diff>=0?'+':''}$${fmt(Math.abs(diff),2)}</span>`;
+    preview.style.display = '';
+
+    // Auto-generate memo if field empty or was previously auto-generated
+    const memoEl = document.getElementById('logMemo');
+    const date   = document.getElementById('logDate').value;
+    const auto   = `${date} 定投 ${sym} · 成交额 $${fmt(amount,2)} · ${fmt(shares,4)}股 @ $${calcPrice.toFixed(4)}/股`;
+    if (!memoEl.value || memoEl.dataset.auto === 'true') {
+      memoEl.value = auto;
+      memoEl.dataset.auto = 'true';
+    }
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+function saveLogEntry() {
+  const id      = document.getElementById('logModalId').value;
+  const date    = document.getElementById('logDate').value;
+  const sym     = document.getElementById('logEtf').value;
+  const amount  = parseFloat(document.getElementById('logAmount').value) || 0;
+  const shares  = parseFloat(document.getElementById('logShares').value) || 0;
+  const manualP = parseFloat(document.getElementById('logManualPrice').value) || 0;
+  const memo    = document.getElementById('logMemo').value.trim();
+
+  if (!date || !sym || amount <= 0 || shares <= 0) {
+    alert('请填写日期、ETF、成交额和股数');
+    return;
+  }
+
+  const calcPrice = amount / shares;
+  const price = manualP > 0 ? manualP : calcPrice;
+  const planAmount = ETF_META[sym]?.dca ?? 0;
+
+  const entry = { id: id || ('log_' + Date.now()), date, sym, amount, shares, price, planAmount, memo };
+
+  if (id) {
+    const idx = dcaLog.findIndex(e => e.id === id);
+    if (idx >= 0) dcaLog[idx] = entry;
+  } else {
+    dcaLog.push(entry);
+  }
+
+  saveDcaLog(dcaLog);
+  rebuildPortfolioFromLog();
+  closeLogModal();
+  renderLogView();
+  renderAll(); // refresh summary/detail too
+}
+
+function deleteLogEntry(entryId) {
+  const e = dcaLog.find(x => x.id === entryId);
+  if (!e) return;
+  document.getElementById('confirmMsg').textContent =
+    `确定删除 ${e.date} ${e.sym} $${fmt(e.amount,2)} 这条记录吗？此操作将重新计算持仓均价。`;
+  pendingConfirmFn = () => {
+    dcaLog = dcaLog.filter(x => x.id !== entryId);
+    saveDcaLog(dcaLog);
+    rebuildPortfolioFromLog();
+    renderLogView();
+    renderAll();
+  };
+  document.getElementById('confirmModal').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('open');
+  pendingConfirmFn = null;
+}
+
+function confirmAction() {
+  if (pendingConfirmFn) pendingConfirmFn();
+  closeConfirm();
+}
+
+function exportLogCSV() {
+  const headers = ['#','日期','ETF','成交额(CAD)','股数','成交均价','DCA计划额','差额','Memo'];
+  const rows = [...dcaLog]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map((e, i) => [
+      i + 1, e.date, e.sym,
+      fmt(e.amount, 2), fmt(e.shares, 4), fmt(e.price, 4),
+      fmt(e.planAmount, 2), fmt(e.amount - e.planAmount, 2),
+      `"${(e.memo ?? '').replace(/"/g, '""')}"`
+    ]);
+  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `dca_log_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ─── FILTER / NAV ─────────────────────────────────────────
+function applyFilters() { renderAll(); }
+
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`view-${name}`).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const idx = { summary: 0, detail: 1, log: 2, analysis: 3 }[name] ?? 0;
+  document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+  if (name === 'log') renderLogView();
+  if (name === 'analysis') loadAnalysisData();
+}
+
+// ═══════════════════════════════════════════════════════════
+// ANALYSIS VIEW — reads JSON output from Python pipeline
+// ═══════════════════════════════════════════════════════════
+
+let analysisCache = { metrics: null, dca: null, stress: null };
+
+function setAnalysisStatus(ok, msg) {
+  const dot  = document.getElementById('analysisStatusDot');
+  const text = document.getElementById('analysisStatusText');
+  dot.style.background  = ok ? 'var(--accent2)' : '#f97066';
+  text.style.color      = ok ? 'var(--text-muted)' : '#f97066';
+  text.textContent      = msg;
+}
+
+async function loadAnalysisData() {
+  setAnalysisStatus(true, '正在加载数据...');
+
+  const files = [
+    { key: 'metrics', path: 'outputs/metrics.json' },
+    { key: 'dca',     path: 'outputs/dca_results.json' },
+    { key: 'stress',  path: 'outputs/stress_results.json' },
+  ];
+
+  let loaded = 0;
+  for (const { key, path } of files) {
+    try {
+      const res = await fetch(path + '?t=' + Date.now());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      analysisCache[key] = await res.json();
+      loaded++;
+    } catch (e) {
+      analysisCache[key] = null;
+    }
+  }
+
+  if (loaded === 0) {
+    setAnalysisStatus(false,
+      '找不到分析数据。请先运行 python run_analysis.py，确保 outputs/ 文件夹在同一目录。');
+    renderAnalysisEmpty();
+    return;
+  }
+
+  const ts = analysisCache.metrics?.generated_at ?? analysisCache.dca?.generated_at ?? '—';
+  const tsDisplay = ts !== '—' ? new Date(ts).toLocaleString('zh-CN') : '—';
+  setAnalysisStatus(true,
+    `已加载 ${loaded}/3 个数据文件 · 生成时间：${tsDisplay}`);
+
+  renderAnalysisMetrics();
+  renderAnalysisCorrelation();
+  renderAnalysisDCA();
+  renderAnalysisStress();
+}
+
+function renderAnalysisEmpty() {
+  ['analysisMetricsGrid','analysisCorrelation','analysisDCAGrid','analysisStressContent'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = `<div style="color:var(--text-muted);font-size:11px">无数据</div>`;
+  });
+}
+
+// ── Metrics grid ──────────────────────────────────────────
+function renderAnalysisMetrics() {
+  const grid = document.getElementById('analysisMetricsGrid');
+  if (!analysisCache.metrics?.metrics) {
+    grid.innerHTML = '<div style="color:var(--text-muted);font-size:11px">metrics.json 未找到</div>';
+    return;
+  }
+  const metrics  = analysisCache.metrics.metrics;
+  const tickerNames = analysisCache.metrics.tickers ?? {};
+
+  const METRIC_LABELS = {
+    total_return:  { label: '总收益率', suffix: '%', good: v => v > 0 },
+    annual_return: { label: '年化收益', suffix: '%', good: v => v > 0 },
+    volatility:    { label: '年化波动率', suffix: '%', good: v => v < 15 },
+    max_drawdown:  { label: '最大回撤', suffix: '%', good: v => v > -20 },
+    sharpe:        { label: '夏普比率', suffix: '', good: v => v > 0.7 },
+  };
+
+  const COLORS = ['#5b3f8a','#9b72cf','#6ee7b7','#e8c547','#f97066','#5ba4cf'];
+
+  grid.innerHTML = Object.entries(metrics).map(([ticker, m], i) => {
+    const name  = tickerNames[ticker] ?? ticker;
+    const color = COLORS[i % COLORS.length];
+    const rows  = Object.entries(METRIC_LABELS).map(([key, cfg]) => {
+      const val   = m[key];
+      const good  = cfg.good(val);
+      const color = good ? '#2d9e6b' : '#c0392b';
+      const disp  = val != null ? `${val}${cfg.suffix}` : '—';
+      return `<div style="display:flex;justify-content:space-between;font-size:10px;padding:3px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text-muted)">${cfg.label}</span>
+        <span style="color:${color};font-weight:500">${disp}</span>
+      </div>`;
+    }).join('');
+
+    return `<div style="background:var(--surface2);border-radius:8px;padding:12px;border-top:3px solid ${color}">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;margin-bottom:2px">${ticker}</div>
+      <div style="font-size:9px;color:var(--text-muted);margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
+// ── Correlation ───────────────────────────────────────────
+function renderAnalysisCorrelation() {
+  const el = document.getElementById('analysisCorrelation');
+  const warnings = analysisCache.dca?.correlation_warnings;
+
+  if (!warnings) {
+    el.innerHTML = '<div style="color:var(--text-muted);font-size:11px">dca_results.json 未找到</div>';
+    return;
+  }
+
+  if (warnings.length === 0) {
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface2);border-radius:8px;border-left:3px solid var(--accent2)">
+      <span style="color:var(--accent2);font-size:14px">✓</span>
+      <span style="font-size:11px">无高相关性警告 — 各ETF分散化效果良好</span>
+    </div>`;
+    return;
+  }
+
+  const levelColor = { '极高': '#f97066', '高': '#e8c547' };
+  el.innerHTML = warnings.map(w => {
+    const [t1, t2] = w.pair;
+    const c = levelColor[w.level] ?? '#aaa';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--surface2);border-radius:8px;border-left:3px solid ${c};margin-bottom:8px">
+      <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:${c}">${w.corr}</span>
+      <div>
+        <div style="font-size:11px;font-weight:500">${t1} ↔ ${t2}
+          <span style="margin-left:6px;font-size:9px;background:${c}22;color:${c};padding:1px 6px;border-radius:10px">${w.level}</span>
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${w.note}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── DCA results ───────────────────────────────────────────
+function renderAnalysisDCA() {
+  const grid    = document.getElementById('analysisDCAGrid');
+  const summary = document.getElementById('analysisDCASummary');
+
+  if (!analysisCache.dca?.dca_results) {
+    grid.innerHTML = '<div style="color:var(--text-muted);font-size:11px">dca_results.json 未找到</div>';
+    return;
+  }
+
+  const results = analysisCache.dca.dca_results;
+  const cfg     = analysisCache.dca.dca_config ?? {};
+  const summ    = analysisCache.dca.summary ?? {};
+  const COLORS  = ['#5b3f8a','#9b72cf','#6ee7b7','#e8c547'];
+
+  grid.innerHTML = Object.entries(results).map(([ticker, d], i) => {
+    const ret     = d.return_pct;
+    const retColor = ret >= 0 ? '#2d9e6b' : '#c0392b';
+    const profit  = d.current_value - d.invested;
+    const pct     = ret >= 0 ? ret : Math.abs(ret);
+    const barW    = Math.min(pct * 2, 100);
+    const color   = COLORS[i % COLORS.length];
+
+    return `<div style="background:var(--surface2);border-radius:8px;padding:12px;border-top:3px solid ${color}">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px">${ticker}</div>
+      <div style="font-size:9px;color:var(--text-muted);margin-bottom:10px">${d.n_periods} 期 × $${d.amount_per_period}/期</div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px">
+        <span style="color:var(--text-muted)">总投入</span>
+        <span>$${d.invested.toLocaleString()}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:8px">
+        <span style="color:var(--text-muted)">当前市值</span>
+        <span style="font-weight:500">$${Math.round(d.current_value).toLocaleString()}</span>
+      </div>
+      <div style="background:var(--surface);border-radius:4px;height:4px;margin-bottom:6px">
+        <div style="width:${barW}%;height:100%;background:${retColor};border-radius:4px"></div>
+      </div>
+      <div style="font-size:12px;font-weight:700;font-family:'Syne',sans-serif;color:${retColor}">
+        ${ret >= 0 ? '+' : ''}${ret}% (${profit >= 0 ? '+' : ''}$${Math.round(profit).toLocaleString()})
+      </div>
+    </div>`;
+  }).join('');
+
+  if (summ.total_invested) {
+    const profit = summ.total_value - summ.total_invested;
+    const retColor = summ.total_return_pct >= 0 ? '#2d9e6b' : '#c0392b';
+    summary.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:20px;font-size:11px">
+      <div><span style="color:var(--text-muted)">定投方式 </span><strong>${cfg.frequency ?? '—'}</strong></div>
+      <div><span style="color:var(--text-muted)">总投入 </span><strong>$${summ.total_invested.toLocaleString()}</strong></div>
+      <div><span style="color:var(--text-muted)">当前市值 </span><strong>$${Math.round(summ.total_value).toLocaleString()}</strong></div>
+      <div><span style="color:var(--text-muted)">总浮盈 </span>
+        <strong style="color:${retColor}">${profit >= 0 ? '+' : ''}$${Math.round(profit).toLocaleString()} (${summ.total_return_pct >= 0 ? '+' : ''}${summ.total_return_pct}%)</strong>
+      </div>
+    </div>`;
+  }
+}
+
+// ── Stress test ───────────────────────────────────────────
+function renderAnalysisStress() {
+  const el = document.getElementById('analysisStressContent');
+  if (!analysisCache.stress?.stress_results) {
+    el.innerHTML = '<div style="color:var(--text-muted);font-size:11px">stress_results.json 未找到</div>';
+    return;
+  }
+
+  const results = analysisCache.stress.stress_results;
+
+  el.innerHTML = Object.entries(results).map(([key, sc]) => {
+    const tickers = Object.keys(sc.results);
+    const caseLabels = { pessimistic: '悲观', base: '基准', optimistic: '乐观' };
+    const caseColors = { pessimistic: '#f97066', base: '#e8c547', optimistic: '#6ee7b7' };
+
+    const rows = tickers.map(t => {
+      const r = sc.results[t];
+      return `<tr>
+        <td style="padding:5px 8px;font-family:'Syne',sans-serif;font-weight:700;font-size:11px">${t}</td>
+        <td style="padding:5px 8px;text-align:right;color:${caseColors.pessimistic};font-size:11px">${r.shock_pess_pct}% / $${Math.abs(r.loss_pess).toLocaleString()}</td>
+        <td style="padding:5px 8px;text-align:right;color:${caseColors.base};font-size:11px">${r.shock_base_pct}% / $${Math.abs(r.loss_base).toLocaleString()}</td>
+        <td style="padding:5px 8px;text-align:right;color:${caseColors.optimistic};font-size:11px">${r.shock_opti_pct}% / $${Math.abs(r.loss_opti).toLocaleString()}</td>
+      </tr>`;
+    }).join('');
+
+    return `<div style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:600;font-family:'Syne',sans-serif">${sc.name}</div>
+        <div style="font-size:10px;color:var(--text-muted)">${sc.description}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;background:var(--surface2);border-radius:8px;overflow:hidden">
+        <thead>
+          <tr style="font-size:10px;color:var(--text-muted)">
+            <th style="padding:6px 8px;text-align:left;font-weight:400">ETF</th>
+            <th style="padding:6px 8px;text-align:right;font-weight:400;color:${caseColors.pessimistic}">悲观（冲击/损失）</th>
+            <th style="padding:6px 8px;text-align:right;font-weight:400;color:${caseColors.base}">基准</th>
+            <th style="padding:6px 8px;text-align:right;font-weight:400;color:${caseColors.optimistic}">乐观</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr style="border-top:1px solid var(--border)">
+            <td style="padding:6px 8px;font-size:11px;font-weight:600">合计</td>
+            <td style="padding:6px 8px;text-align:right;font-size:11px;color:${caseColors.pessimistic};font-weight:600">
+              ${sc.total_pct.pessimistic}% / $${Math.abs(sc.totals.pessimistic).toLocaleString()}</td>
+            <td style="padding:6px 8px;text-align:right;font-size:11px;color:${caseColors.base};font-weight:600">
+              ${sc.total_pct.base}% / $${Math.abs(sc.totals.base).toLocaleString()}</td>
+            <td style="padding:6px 8px;text-align:right;font-size:11px;color:${caseColors.optimistic};font-weight:600">
+              ${sc.total_pct.optimistic}% / $${Math.abs(sc.totals.optimistic).toLocaleString()}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// DYNAMIC ETF MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+
+// Build ticker bar DOM from ETF_META
+function rebuildTickerBar() {
+  const bar = document.getElementById('tickerBar');
+  const market = document.getElementById('marketStatus');
+  // Clear all except market pill
+  bar.innerHTML = '';
+
+  Object.keys(ETF_META).forEach((sym, i) => {
+    if (i > 0) {
+      const div = document.createElement('div');
+      div.className = 'ticker-divider';
+      bar.appendChild(div);
+    }
+    const item = document.createElement('div');
+    item.className = 'ticker-item';
+    item.innerHTML = `
+      <span class="ticker-sym">${sym}</span>
+      <span class="ticker-price" id="tick-${sym}">—</span>
+      <span class="ticker-chg flat" id="tickchg-${sym}">—</span>`;
+    bar.appendChild(item);
+  });
+
+  const div = document.createElement('div');
+  div.className = 'ticker-divider';
+  bar.appendChild(div);
+  bar.appendChild(market);
+}
+
+// Populate all three ETF <select> dropdowns from ETF_META
+function rebuildEtfSelects() {
+  const syms = Object.keys(ETF_META);
+  const ids = ['filterEtf', 'logFilterEtf', 'logEtf'];
+
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const prev = el.value;
+
+    if (id === 'logEtf') {
+      // No "All ETFs" option for log entry modal
+      el.innerHTML = syms.map(s => `<option value="${s}">${s}</option>`).join('');
+    } else {
+      el.innerHTML = `<option value="all">All ETFs</option>` +
+        syms.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    // Restore previous selection if still valid
+    if ([...el.options].some(o => o.value === prev)) el.value = prev;
+  });
+}
+
+// ── Manage ETFs modal ─────────────────────────────────────
+
+// ── Manage ETFs modal ─────────────────────────────────────
+
+const FREQ_LABELS = { weekly: '每周', biweekly: '每两周', monthly: '每月' };
+
+function mgSwitchTab(tab) {
+  document.getElementById('mgTabList').style.display = tab === 'list' ? '' : 'none';
+  document.getElementById('mgTabAdd').style.display  = tab === 'add'  ? '' : 'none';
+  const on  = 'padding:7px 16px;border:none;border-bottom:2px solid var(--purple-mid);color:var(--purple-mid);margin-bottom:-1px;background:none;font-family:\'DM Mono\',monospace;font-size:11px;cursor:pointer';
+  const off = 'padding:7px 16px;border:none;border-bottom:2px solid transparent;color:var(--text-muted);margin-bottom:-1px;background:none;font-family:\'DM Mono\',monospace;font-size:11px;cursor:pointer';
+  document.getElementById('mgTabBtnList').style.cssText = tab === 'list' ? on : off;
+  document.getElementById('mgTabBtnAdd').style.cssText  = tab === 'add'  ? on : off;
+}
+
+function openAddEtfModal() {
+  renderManageEtfList();
+  mgSwitchTab('list');
+  ['newEtfTicker','newEtfName','newEtfDca','newEtfShares'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  var startEl = document.getElementById('newEtfStart');
+  if (startEl) startEl.value = new Date().toISOString().slice(0,10);
+  var freqEl = document.getElementById('newEtfFreq');
+  if (freqEl) freqEl.value = 'biweekly';
+  var colorEl = document.getElementById('newEtfColor');
+  if (colorEl) colorEl.value = '#5ba4cf';
+  document.getElementById('addEtfModal').classList.add('open');
+}
+
+function closeAddEtfModal() {
+  document.getElementById('addEtfModal').classList.remove('open');
+}
+
+function renderManageEtfList() {
+  const list = document.getElementById('manageEtfList');
+  if (!list) return;
+
+  list.innerHTML = Object.entries(ETF_META).map(([sym, m]) => {
+    const livePrice = liveData[sym]?.price;
+    const priceStr  = livePrice ? `$${livePrice.toFixed(2)}` : '<span style="color:var(--text-muted)">—</span>';
+    const shares    = portfolio[sym]?.shares ?? 0;
+    const freq      = m.dcaFreq  || 'biweekly';
+    const startDate = m.dcaStart || '';
+
+    return `
+    <div style="background:var(--surface2);border-radius:10px;border-left:4px solid ${m.color};margin-bottom:2px">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px 8px">
+        <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:14px;min-width:56px">${sym}</span>
+        <span style="font-size:10px;color:var(--text-muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name}</span>
+        <span style="font-size:11px;font-family:'Syne',sans-serif;font-weight:700">${priceStr}</span>
+        <button onclick="confirmRemoveEtf('${sym}')"
+          style="background:none;border:1px solid #f97066;color:#f97066;border-radius:5px;padding:2px 8px;font-size:10px;cursor:pointer;white-space:nowrap;flex-shrink:0">
+          ✕ 删除
+        </button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 14px 12px">
+        <div>
+          <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.06em">DCA金额/期 $</div>
+          <input type="number" min="0" value="${m.dca}"
+            style="width:100%;font-size:12px;font-family:'DM Mono',monospace;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:4px 6px;color:var(--ink);box-sizing:border-box"
+            onchange="updateEtfField('${sym}','dca',parseFloat(this.value)||0)">
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.06em">频率</div>
+          <select style="width:100%;font-size:11px;font-family:'DM Mono',monospace;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:4px 5px;color:var(--ink);box-sizing:border-box"
+            onchange="updateEtfField('${sym}','dcaFreq',this.value)">
+            <option value="weekly"   ${freq==='weekly'   ?'selected':''}>每周</option>
+            <option value="biweekly" ${freq==='biweekly' ?'selected':''}>每两周</option>
+            <option value="monthly"  ${freq==='monthly'  ?'selected':''}>每月</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.06em">DCA开始日期</div>
+          <input type="date" value="${startDate}"
+            style="width:100%;font-size:11px;font-family:'DM Mono',monospace;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:4px 5px;color:var(--ink);box-sizing:border-box"
+            onchange="updateEtfField('${sym}','dcaStart',this.value)">
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--text-muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.06em">持股数</div>
+          <input type="number" min="0" step="0.0001" value="${shares > 0 ? shares : ''}" placeholder="0"
+            style="width:100%;font-size:12px;font-family:'DM Mono',monospace;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:4px 6px;color:var(--ink);box-sizing:border-box"
+            onchange="updatePortfolioShares('${sym}',parseFloat(this.value)||0)">
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateEtfField(sym, field, value) {
+  if (!ETF_META[sym]) return;
+  ETF_META[sym][field] = value;
+  if (field === 'dca' && portfolio[sym]) {
+    portfolio[sym].dca = value;
+    savePortfolio(portfolio);
+  }
+  saveEtfMeta(ETF_META);
+  renderAll();
+}
+
+function updatePortfolioShares(sym, shares) {
+  if (!portfolio[sym]) portfolio[sym] = { shares: 0, avgCost: 0, totalPaid: 0 };
+  portfolio[sym].shares = shares;
+  const tp = portfolio[sym].totalPaid || 0;
+  if (shares > 0 && tp > 0) portfolio[sym].avgCost = tp / shares;
+  savePortfolio(portfolio);
+  renderAll();
+}
+
+function addNewEtf() {
+  const ticker = document.getElementById('newEtfTicker').value.trim().toUpperCase().replace(/\s/g,'');
+  const name   = document.getElementById('newEtfName').value.trim();
+  const dca    = parseFloat(document.getElementById('newEtfDca').value)    || 0;
+  const color  = document.getElementById('newEtfColor').value;
+  const start  = document.getElementById('newEtfStart').value;
+  const freq   = document.getElementById('newEtfFreq').value;
+  const shares = parseFloat(document.getElementById('newEtfShares').value) || 0;
+
+  if (!ticker) { alert('请输入 Ticker 代码'); return; }
+  if (ETF_META[ticker]) { alert(ticker + ' 已在组合中'); return; }
+
+  ETF_META[ticker] = { name: name || ticker, desc: name || ticker, color, dca, dcaStart: start, dcaFreq: freq };
+  saveEtfMeta(ETF_META);
+
+  portfolio[ticker] = { shares, avgCost: 0, totalPaid: 0, dca };
+  savePortfolio(portfolio);
+
+  rebuildTickerBar();
+  rebuildEtfSelects();
+  fetchAll();
+  renderAll();
+  renderManageEtfList();
+  mgSwitchTab('list');
+}
+
+
+// ── Remove ETF ────────────────────────────────────────────
+
+function confirmRemoveEtf(sym) {
+  const hasHoldings = portfolio[sym]?.shares > 0;
+  const hasDcaLog   = dcaLog.some(e => e.sym === sym);
+  let msg = `从组合中移除 ${sym}？`;
+  if (hasHoldings) msg += `\n⚠️  该ETF有 ${portfolio[sym].shares.toFixed(4)} 股持仓，移除后将清零。`;
+  if (hasDcaLog)   msg += `\n⚠️  DCA日志中有 ${dcaLog.filter(e => e.sym === sym).length} 条记录，将被保留（不删除历史）。`;
+
+  document.getElementById('confirmMsg').textContent = msg;
+  pendingConfirmFn = () => removeEtf(sym);
+  document.getElementById('confirmModal').classList.add('open');
+}
+
+function removeEtf(sym) {
+  // Remove from ETF_META and portfolio
+  delete ETF_META[sym];
+  delete portfolio[sym];
+  delete liveData[sym];
+
+  saveEtfMeta(ETF_META);
+  savePortfolio(portfolio);
+
+  // Rebuild everything
+  rebuildTickerBar();
+  rebuildEtfSelects();
+  renderAll();
+  renderLogView();
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+rebuildTickerBar();
+rebuildEtfSelects();
+rebuildPortfolioFromLog();
+fetchAll();
+setInterval(fetchAll, 5 * 60 * 1000);
+</script>
+</body>
+</html>
